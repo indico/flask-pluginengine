@@ -13,3 +13,7 @@ from .mixins import (PluginBlueprintSetupState, PluginBlueprintSetupStateMixin, 
 from .plugin import Plugin, uses, depends, render_plugin_template
 from .signals import plugins_loaded
 from .util import with_plugin_context
+
+__all__ = ['PluginEngine', 'current_plugin', 'PluginBlueprintSetupState', 'PluginBlueprintSetupStateMixin',
+           'PluginBlueprint', 'PluginBlueprintMixin', 'PluginFlask', 'PluginFlaskMixin', 'Plugin', 'uses', 'depends',
+           'render_plugin_template', 'plugins_loaded', 'with_plugin_context']
