@@ -9,6 +9,8 @@ from __future__ import unicode_literals
 import sys
 from functools import wraps
 
+from ._compat import iteritems
+
 
 def get_state(app):
     """Gets the application-specific plugine engine data."""
@@ -28,14 +30,14 @@ def resolve_dependencies(plugins):
 
     :param plugins: dict mapping plugin names to plugin classes
     """
-    plugins_deps = {name: (cls.required_plugins, cls.used_plugins) for name, cls in plugins.iteritems()}
+    plugins_deps = {name: (cls.required_plugins, cls.used_plugins) for name, cls in iteritems(plugins)}
     resolved_deps = set()
     while plugins_deps:
         # Get plugins with both hard and soft dependencies being met
-        ready = {cls for cls, deps in plugins_deps.iteritems() if all(d <= resolved_deps for d in deps)}
+        ready = {cls for cls, deps in iteritems(plugins_deps) if all(d <= resolved_deps for d in deps)}
         if not ready:
             # Otherwise check for plugins with all hard dependencies being met
-            ready = {cls for cls, deps in plugins_deps.iteritems() if deps[0] <= resolved_deps}
+            ready = {cls for cls, deps in iteritems(plugins_deps) if deps[0] <= resolved_deps}
         if not ready:
             # Either a circular dependency or a dependency that's not loaded
             raise Exception('Could not resolve dependencies between plugins')
@@ -50,7 +52,7 @@ def make_hashable(obj):
     if isinstance(obj, list):
         return tuple(obj)
     elif isinstance(obj, dict):
-        return frozenset((k, make_hashable(v)) for k, v in obj.iteritems())
+        return frozenset((k, make_hashable(v)) for k, v in iteritems(obj))
     return obj
 
 
