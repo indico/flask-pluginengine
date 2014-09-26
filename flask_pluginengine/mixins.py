@@ -80,5 +80,3 @@ class PluginPrefixLoader(PrefixLoader):
 
     def list_templates(self):
         raise TypeError('this loader cannot iterate over all templates')
-
-
