@@ -45,4 +45,10 @@ setup(
     ],
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
+    classifiers=[
+        'License :: OSI Approved :: BSD License',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4'
+    ],
 )
