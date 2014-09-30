@@ -7,7 +7,7 @@
 from __future__ import unicode_literals
 from contextlib import contextmanager
 
-from flask import render_template
+from flask import render_template, url_for
 
 from .globals import _plugin_ctx_stack, current_plugin
 from .util import wrap_in_plugin_context, trim_docstring
@@ -59,6 +59,12 @@ def render_plugin_template(template, **context):
     """
     template = '{}:{}'.format(current_plugin.name, template)
     return render_template(template, **context)
+
+
+def url_for_plugin(endpoint, **values):
+    """Like url_for but prepending plugin_ to endpoint."""
+    endpoint = 'plugin_{}'.format(endpoint)
+    return url_for(endpoint, **values)
 
 
 class Plugin(object):
