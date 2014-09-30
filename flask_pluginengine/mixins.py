@@ -33,6 +33,7 @@ class PluginBlueprintMixin(object):
             raise ValueError('Template folder cannot be specified')
         kwargs.setdefault('static_folder', 'static')
         kwargs.setdefault('static_url_path', '/static/plugins/{}'.format(name))
+        name = 'plugin_{}'.format(name)
         super(PluginBlueprintMixin, self).__init__(name, *args, **kwargs)
 
     def make_setup_state(self, app, options, first_registration=False):
