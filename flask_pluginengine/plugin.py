@@ -51,14 +51,24 @@ def uses(*plugins):
     return wrapper
 
 
-def render_plugin_template(template, **context):
+def render_plugin_template(template_name_or_list, **context):
     """Renders a template from the plugin's template folder with the given context.
 
-    :param template: the name of the template to be rendered
-    :param context: the variables that should be available in the context of the template.
+    If the template name contains a plugin name (``pluginname:name``), that
+    name is used instead of the current plugin's name.
+
+    :param template_name_or_list: the name of the template or an iterable
+                                  containing template names (the first
+                                  existing template is used)
+    :param context: the variables that should be available in the
+                    context of the template.
     """
-    template = '{}:{}'.format(current_plugin.name, template)
-    return render_template(template, **context)
+    if not isinstance(template_name_or_list, basestring):
+        template_name_or_list = ['{}:{}'.format(current_plugin.name, tpl) if ':' not in tpl else tpl
+                                 for tpl in template_name_or_list]
+    elif ':' not in template_name_or_list:
+        template_name_or_list = '{}:{}'.format(current_plugin.name, template_name_or_list)
+    return render_template(template_name_or_list, **context)
 
 
 def url_for_plugin(endpoint, **values):
