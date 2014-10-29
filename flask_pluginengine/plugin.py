@@ -116,8 +116,10 @@ class Plugin(object):
     def plugin_context(self):
         """Pushes the plugin on the plugin context stack."""
         _plugin_ctx_stack.push(self)
-        yield
-        assert _plugin_ctx_stack.pop() is self, 'Popped wrong plugin'
+        try:
+            yield
+        finally:
+            assert _plugin_ctx_stack.pop() is self, 'Popped wrong plugin'
 
     def connect(self, signal, receiver, **connect_kwargs):
         connect_kwargs['weak'] = False
