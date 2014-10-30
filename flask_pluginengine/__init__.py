@@ -12,8 +12,9 @@ from .mixins import (PluginBlueprintSetupState, PluginBlueprintSetupStateMixin, 
                      PluginFlask, PluginFlaskMixin)
 from .plugin import Plugin, uses, depends, render_plugin_template, url_for_plugin
 from .signals import plugins_loaded
-from .util import with_plugin_context
+from .util import with_plugin_context, wrap_in_plugin_context, trim_docstring
 
-__all__ = ['PluginEngine', 'current_plugin', 'PluginBlueprintSetupState', 'PluginBlueprintSetupStateMixin',
+__all__ = ('PluginEngine', 'current_plugin', 'PluginBlueprintSetupState', 'PluginBlueprintSetupStateMixin',
            'PluginBlueprint', 'PluginBlueprintMixin', 'PluginFlask', 'PluginFlaskMixin', 'Plugin', 'uses', 'depends',
-           'render_plugin_template', 'url_for_plugin', 'plugins_loaded', 'with_plugin_context']
+           'render_plugin_template', 'url_for_plugin', 'plugins_loaded', 'with_plugin_context', 'trim_docstring',
+           'wrap_in_plugin_context')
