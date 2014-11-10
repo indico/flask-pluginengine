@@ -4,7 +4,7 @@
 # Flask-PluginEngine is free software; you can redistribute it
 # and/or modify it under the terms of the Revised BSD License.
 
-from pkg_resources import EntryPoint
+from pkg_resources import EntryPoint, Distribution
 
 import pytest
 from pytest import raises
@@ -29,12 +29,22 @@ class ImposterPlugin(object):
     pass
 
 
+class OtherVersionPlugin(Plugin):
+    """OtherVersionPlugin
+
+    I am a plugin with a custom version
+    """
+    version = '2.0'
+
+
 class MockEntryPoint(EntryPoint):
     def load(self):
         if self.name == 'importfail':
             raise ImportError()
         elif self.name == 'imposter':
             return ImposterPlugin
+        elif self.name == 'otherversion':
+            return OtherVersionPlugin
         else:
             return EspressoModule
 
@@ -60,13 +70,18 @@ def mock_entry_point(monkeypatch):
     def _mock_entry_points(_, name):
         return {
             'espresso': [MockEntryPoint('espresso', 'test.plugin')],
+            'otherversion': [MockEntryPoint('otherversion', 'test.plugin')],
             'someotherstuff': [],
             'doubletrouble': [MockEntryPoint('double', 'double'), MockEntryPoint('double', 'double')],
             'importfail': [MockEntryPoint('importfail', 'test.importfail')],
             'imposter': [MockEntryPoint('imposter', 'test.imposter')]
         }[name]
 
+    def _mock_distribution(name):
+        return Distribution(version='1.2.3')
+
     monkeypatch.setattr(engine_mod, 'iter_entry_points', _mock_entry_points)
+    monkeypatch.setattr(engine_mod, 'get_distribution', _mock_distribution)
 
 
 @pytest.fixture
@@ -108,6 +123,17 @@ def test_load(mock_entry_point, flask_app, engine):
 
         assert plugin.title == 'EspressoModule'
         assert plugin.description == 'Creamy espresso out of your Flask app'
+        assert plugin.version == '1.2.3'
+        assert plugin.package_version == '1.2.3'
+
+
+def test_custom_version(mock_entry_point, flask_app, engine):
+    flask_app.config['PLUGINENGINE_PLUGINS'] = ['otherversion']
+    engine.load_plugins(flask_app)
+    with flask_app.app_context():
+        plugin = engine.get_active_plugins()['otherversion']
+        assert plugin.package_version == '1.2.3'
+        assert plugin.version == '2.0'
 
 
 def test_fail_non_existing(mock_entry_point, flask_app, engine):

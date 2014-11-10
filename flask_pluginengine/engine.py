@@ -5,7 +5,7 @@
 # and/or modify it under the terms of the Revised BSD License.
 
 from __future__ import unicode_literals
-from pkg_resources import iter_entry_points
+from pkg_resources import iter_entry_points, get_distribution
 
 from flask import current_app
 from flask.helpers import get_root_path
@@ -82,6 +82,9 @@ class PluginEngine(object):
                 state.failed.add(name)
                 continue
             plugin_class.package_name = entry_point.module_name.split('.')[0]
+            plugin_class.package_version = get_distribution(plugin_class.package_name).version
+            if plugin_class.version is None:
+                plugin_class.version = plugin_class.package_version
             plugin_class.name = name
             plugin_class.root_path = get_root_path(entry_point.module_name)
             plugins[name] = plugin_class

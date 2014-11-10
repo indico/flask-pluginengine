@@ -79,6 +79,8 @@ def url_for_plugin(endpoint, **values):
 
 class Plugin(object):
     package_name = None  # set to the containing package when the plugin is loaded
+    package_version = None  # set to the version of the containing package when the plugin is loaded
+    version = None  # set to the package_version if it's None when the plugin is loaded
     name = None  # set to the entry point name when the plugin is loaded
     root_path = None  # set to the path of the module containing the class when the plugin is loaded
     required_plugins = frozenset()
