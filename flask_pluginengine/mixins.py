@@ -44,24 +44,6 @@ class PluginBlueprintMixin(object):
         return None
 
 
-class PluginFlaskMixin(object):
-    def create_global_jinja_loader(self):
-        default_loader = super(PluginFlaskMixin, self).create_global_jinja_loader()
-        return ChoiceLoader([PluginPrefixLoader(self), default_loader])
-
-
-class PluginBlueprintSetupState(PluginBlueprintSetupStateMixin, BlueprintSetupState):
-    pass
-
-
-class PluginBlueprint(PluginBlueprintMixin, Blueprint):
-    pass
-
-
-class PluginFlask(PluginFlaskMixin, Flask):
-    pass
-
-
 class PluginPrefixLoader(PrefixLoader):
     """Prefix loader that uses plugin names"""
     def __init__(self, app):
@@ -81,3 +63,23 @@ class PluginPrefixLoader(PrefixLoader):
 
     def list_templates(self):
         raise TypeError('this loader cannot iterate over all templates')
+
+
+class PluginFlaskMixin(object):
+    plugin_jinja_loader = PluginPrefixLoader
+
+    def create_global_jinja_loader(self):
+        default_loader = super(PluginFlaskMixin, self).create_global_jinja_loader()
+        return ChoiceLoader([self.plugin_jinja_loader(self), default_loader])
+
+
+class PluginBlueprintSetupState(PluginBlueprintSetupStateMixin, BlueprintSetupState):
+    pass
+
+
+class PluginBlueprint(PluginBlueprintMixin, Blueprint):
+    pass
+
+
+class PluginFlask(PluginFlaskMixin, Flask):
+    pass
