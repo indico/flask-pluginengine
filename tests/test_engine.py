@@ -7,10 +7,11 @@
 from pkg_resources import EntryPoint, Distribution
 
 import pytest
+from flask import render_template, Flask
+from jinja2.loaders import DictLoader
 from pytest import raises
 
-from flask import Flask
-from flask_pluginengine import PluginEngine, plugins_loaded, Plugin
+from flask_pluginengine import PluginEngine, plugins_loaded, Plugin, render_plugin_template, PluginFlaskMixin
 
 
 class EspressoModule(Plugin):
@@ -49,9 +50,27 @@ class MockEntryPoint(EntryPoint):
             return EspressoModule
 
 
+class MockLoader(DictLoader):
+    def __init__(self, *args, **kwargs):
+        super(MockLoader, self).__init__({
+            'test.txt': 'plugin test'
+        })
+
+
+class MockCoreTemplatesMixin(object):
+    def create_global_jinja_loader(self):
+        return DictLoader({
+            'test.txt': 'core test'
+        })
+
+
+class TestFlask(PluginFlaskMixin, MockCoreTemplatesMixin, Flask):
+    pass
+
+
 @pytest.fixture
 def flask_app():
-    app = Flask(__name__)
+    app = TestFlask(__name__)
     app.config['TESTING'] = True
     app.config['PLUGINENGINE_NAMESPACE'] = 'test'
     app.config['PLUGINENGINE_PLUGINS'] = ['espresso']
@@ -245,5 +264,35 @@ def test_repr_state(flask_app, loaded_engine):
     Check that repr(PluginEngineState(...)) is OK
     """
     from flask_pluginengine.util import get_state
-    assert repr(get_state(flask_app)) == "<_PluginEngineState(<PluginEngine()>, <Flask 'test_engine'>, " \
-           "{'espresso': <EspressoModule(espresso) bound to <Flask 'test_engine'>>})>"
+    assert repr(get_state(flask_app)) == ("<_PluginEngineState(<PluginEngine()>, <TestFlask 'test_engine'>, "
+                                          "{'espresso': <EspressoModule(espresso) bound to "
+                                          "<TestFlask 'test_engine'>>})>")
+
+
+def test_render_template(monkeypatch, flask_app, loaded_engine):
+    """
+    Check that app/plugin templates are separate
+    """
+    monkeypatch.setattr('flask_pluginengine.mixins.FileSystemLoader', MockLoader)
+    with flask_app.app_context():
+        assert render_template('test.txt') == 'core test'
+        assert render_template('espresso:test.txt') == 'plugin test'
+
+
+def test_render_plugin_template(monkeypatch, flask_app, loaded_engine):
+    """
+    Check that render_plugin_template works
+    """
+    monkeypatch.setattr('flask_pluginengine.mixins.FileSystemLoader', MockLoader)
+    with flask_app.app_context():
+        plugin = loaded_engine.get_plugin('espresso')
+        text = 'plugin test'
+        with plugin.plugin_context():
+            assert render_template('espresso:test.txt') == text
+            assert render_plugin_template('test.txt') == text
+            assert render_plugin_template('espresso:test.txt') == text
+        # explicit plugin name works outside context
+        assert render_plugin_template('espresso:test.txt') == text
+        # implicit plucin name fails outside context
+        with raises(RuntimeError):
+            render_plugin_template('test.txt')
