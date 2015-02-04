@@ -64,9 +64,13 @@ def render_plugin_template(template_name_or_list, **context):
                     context of the template.
     """
     if not isinstance(template_name_or_list, basestring):
+        if not current_plugin and not all(':' in tpl for tpl in template_name_or_list):
+            raise RuntimeError('render_plugin_template outside plugin context')
         template_name_or_list = ['{}:{}'.format(current_plugin.name, tpl) if ':' not in tpl else tpl
                                  for tpl in template_name_or_list]
     elif ':' not in template_name_or_list:
+        if not current_plugin:
+            raise RuntimeError('render_plugin_template outside plugin context')
         template_name_or_list = '{}:{}'.format(current_plugin.name, template_name_or_list)
     return render_template(template_name_or_list, **context)
 
