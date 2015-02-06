@@ -9,6 +9,7 @@ from contextlib import contextmanager
 
 from flask import render_template, url_for
 
+from ._compat import string_types
 from .globals import _plugin_ctx_stack, current_plugin
 from .util import wrap_in_plugin_context, trim_docstring
 
@@ -63,7 +64,7 @@ def render_plugin_template(template_name_or_list, **context):
     :param context: the variables that should be available in the
                     context of the template.
     """
-    if not isinstance(template_name_or_list, basestring):
+    if not isinstance(template_name_or_list, string_types):
         if not current_plugin and not all(':' in tpl for tpl in template_name_or_list):
             raise RuntimeError('render_plugin_template outside plugin context')
         template_name_or_list = ['{}:{}'.format(current_plugin.name, tpl) if ':' not in tpl else tpl

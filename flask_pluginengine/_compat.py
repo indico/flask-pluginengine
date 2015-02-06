@@ -7,8 +7,12 @@
 import sys
 
 if sys.version_info[0] > 2:
+    string_types = (str,)
+
     def iteritems(arg, **kwargs):
         return iter(arg.items(**kwargs))
 else:
+    string_types = (basestring,)
+
     def iteritems(arg, **kwargs):
         return iter(arg.iteritems(**kwargs))
