@@ -43,7 +43,7 @@ setup(
         'Flask>=0.7',
         'blinker'
     ],
-    tests_require=['pytest'],
+    tests_require=['pytest', 'pytest-cov'],
     cmdclass={'test': PyTest},
     classifiers=[
         'License :: OSI Approved :: BSD License',

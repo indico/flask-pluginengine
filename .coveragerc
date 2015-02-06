@@ -1,0 +1,9 @@
+[run]
+branch = true
+source = flask_pluginengine
+omit = flask_pluginengine/_compat.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__

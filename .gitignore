@@ -4,3 +4,6 @@ env/
 *.egg-info
 *.egg
 .tox/
+.eggs/
+htmlcov/
+.coverage
