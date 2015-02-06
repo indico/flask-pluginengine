@@ -7,9 +7,11 @@
 from __future__ import unicode_literals
 
 import sys
-from functools import wraps
+from contextlib import contextmanager
+from functools import wraps, update_wrapper
 
 from ._compat import iteritems
+from .globals import _plugin_ctx_stack
 
 
 def get_state(app):
@@ -45,6 +47,63 @@ def resolve_dependencies(plugins):
         for name in ready:
             yield name, plugins[name]
             del plugins_deps[name]
+
+
+@contextmanager
+def plugin_context(plugin):
+    """Enters a plugin context if a plugin is provided, otherwise clears it
+
+    Useful for code which sometimes needs a plugin context, e.g.
+    because it may be used in both the core and in a plugin.
+    """
+    if plugin is None:
+        # Explicitly push a None plugin to disable an existing plugin context
+        _plugin_ctx_stack.push(None)
+        yield
+        assert _plugin_ctx_stack.pop() is None
+    else:
+        with plugin.plugin_context():
+            yield
+
+
+def wrap_iterator_in_plugin_context(plugin, gen_or_func):
+    """Runs an iterator inside a plugin context"""
+    # Heavily based on Flask's stream_with_context
+    try:
+        gen = iter(gen_or_func)
+    except TypeError:
+        def decorator(*args, **kwargs):
+            return wrap_iterator_in_plugin_context(plugin, gen_or_func(*args, **kwargs))
+
+        return update_wrapper(decorator, gen_or_func)
+
+    def generator():
+        with plugin_context(plugin):
+            # Dummy sentinel.  Has to be inside the context block or we're
+            # not actually keeping the context around.
+            yield None
+
+            for item in gen:
+                yield item
+
+    # The trick is to start the generator.  Then the code execution runs until
+    # the first dummy None is yielded at which point the context was already
+    # pushed.  This item is discarded.  Then when the iteration continues the
+    # real generator is executed.
+    wrapped_g = generator()
+    next(wrapped_g)
+    return wrapped_g
+
+
+def wrap_macro_in_plugin_context(plugin, macro):
+    """Wraps a macro inside a plugin context"""
+    func = macro._func
+
+    def decorator(*args, **kwargs):
+        with plugin_context(plugin):
+            return func(*args, **kwargs)
+
+    macro._func = update_wrapper(decorator, func)
 
 
 def make_hashable(obj):

@@ -1,0 +1,7 @@
+{% extends 'simple_macro_extends.txt' %}
+{% from 'simple_macro_extends.txt' import m as mm -%}
+{% block test -%}
+plugin_macro={{ mm() }}
+plugin_macro_call={% call mm() %}{{ whereami() }}{% endcall %}
+{% endblock -%}
+

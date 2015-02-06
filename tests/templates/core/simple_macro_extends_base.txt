@@ -1,0 +1,3 @@
+{% macro m() %}core-macro/{{ whereami() }}/{{ caller() if caller else 'undef' }}{% endmacro %}
+core_macro={{ m() }}
+core_macro_call={% call m() %}{{ whereami() }}{% endcall %}

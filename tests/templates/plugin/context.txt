@@ -1,0 +1,12 @@
+{% extends 'context.txt' %}
+{% from 'context.txt' import m as mm %}
+{% macro mp() %}plugin-macro/{{ whereami() }}/{{ caller() if caller else 'undef' }}{% endmacro %}
+{% block a %}plugin-a/{{ whereami() }}{% endblock %}
+{% block extra -%}
+core_macro_in_plugin={{ mm() }}
+core_macro_in_plugin_call={% call mm() %}{{ whereami() }}{% endcall %}
+plugin_macro={{ mp() }}
+plugin_macro_call={% call mp() %}{{ whereami() }}{% endcall %}
+plugin_inc_core={% include 'test.txt' %}
+plugin_inc_plugin={% include 'espresso:test.txt' %}
+{%- endblock %}

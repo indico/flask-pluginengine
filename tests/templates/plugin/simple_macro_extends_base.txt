@@ -1,0 +1,1 @@
+{% extends 'simple_macro_extends_base.txt' %}

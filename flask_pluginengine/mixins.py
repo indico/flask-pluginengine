@@ -6,15 +6,14 @@
 
 from __future__ import unicode_literals
 
-import os
-
 from flask import Blueprint, Flask
 from flask.blueprints import BlueprintSetupState
 from flask.helpers import locked_cached_property
-from jinja2 import PrefixLoader, TemplateNotFound, FileSystemLoader, ChoiceLoader
+from jinja2 import ChoiceLoader
 
 from .globals import current_plugin
-from .util import get_state, wrap_in_plugin_context
+from .util import wrap_in_plugin_context
+from .templating import PluginPrefixLoader, PluginContextTemplate
 
 
 class PluginBlueprintSetupStateMixin(object):
@@ -44,33 +43,17 @@ class PluginBlueprintMixin(object):
         return None
 
 
-class PluginPrefixLoader(PrefixLoader):
-    """Prefix loader that uses plugin names"""
-    def __init__(self, app):
-        super(PluginPrefixLoader, self).__init__(None, ':')
-        self.app = app
-
-    def get_loader(self, template):
-        try:
-            plugin_name, name = template.split(self.delimiter, 1)
-        except ValueError:
-            raise TemplateNotFound(template)
-        plugin = get_state(self.app).plugin_engine.get_plugin(plugin_name)
-        if plugin is None:
-            raise TemplateNotFound(template)
-        loader = FileSystemLoader(os.path.join(plugin.root_path, 'templates'))
-        return loader, name
-
-    def list_templates(self):
-        raise TypeError('this loader cannot iterate over all templates')
-
-
 class PluginFlaskMixin(object):
     plugin_jinja_loader = PluginPrefixLoader
 
     def create_global_jinja_loader(self):
         default_loader = super(PluginFlaskMixin, self).create_global_jinja_loader()
         return ChoiceLoader([self.plugin_jinja_loader(self), default_loader])
+
+    def create_jinja_environment(self):
+        env = super(PluginFlaskMixin, self).create_jinja_environment()
+        env.template_class = PluginContextTemplate
+        return env
 
 
 class PluginBlueprintSetupState(PluginBlueprintSetupStateMixin, BlueprintSetupState):

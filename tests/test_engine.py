@@ -4,14 +4,17 @@
 # Flask-PluginEngine is free software; you can redistribute it
 # and/or modify it under the terms of the Revised BSD License.
 
+import os
+import re
 from pkg_resources import EntryPoint, Distribution
 
 import pytest
-from flask import render_template, Flask
-from jinja2.loaders import DictLoader
-from pytest import raises
+from jinja2 import TemplateNotFound
+from flask import render_template
 
-from flask_pluginengine import PluginEngine, plugins_loaded, Plugin, render_plugin_template, PluginFlaskMixin
+from flask_pluginengine import (PluginEngine, plugins_loaded, Plugin, render_plugin_template, current_plugin,
+                                plugin_context, PluginFlask)
+from flask_pluginengine.templating import PrefixIgnoringFileSystemLoader
 
 
 class EspressoModule(Plugin):
@@ -50,31 +53,20 @@ class MockEntryPoint(EntryPoint):
             return EspressoModule
 
 
-class MockLoader(DictLoader):
-    def __init__(self, *args, **kwargs):
-        super(MockLoader, self).__init__({
-            'test.txt': 'plugin test'
-        })
-
-
-class MockCoreTemplatesMixin(object):
-    def create_global_jinja_loader(self):
-        return DictLoader({
-            'test.txt': 'core test'
-        })
-
-
-class TestFlask(PluginFlaskMixin, MockCoreTemplatesMixin, Flask):
-    pass
-
-
 @pytest.fixture
 def flask_app():
-    app = TestFlask(__name__)
+    app = PluginFlask(__name__, template_folder='templates/core')
     app.config['TESTING'] = True
     app.config['PLUGINENGINE_NAMESPACE'] = 'test'
     app.config['PLUGINENGINE_PLUGINS'] = ['espresso']
+    app.add_template_global(lambda: current_plugin.name if current_plugin else 'core', 'whereami')
     return app
+
+
+@pytest.yield_fixture
+def flask_app_ctx(flask_app):
+    with flask_app.app_context():
+        yield flask_app
 
 
 @pytest.fixture
@@ -104,8 +96,13 @@ def mock_entry_point(monkeypatch):
 
 
 @pytest.fixture
-def loaded_engine(mock_entry_point, flask_app, engine):
+def loaded_engine(mock_entry_point, monkeypatch, flask_app, engine):
     engine.load_plugins(flask_app)
+
+    def init_loader(self, *args, **kwargs):
+        super(PrefixIgnoringFileSystemLoader, self).__init__(os.path.join(flask_app.root_path, 'templates/plugin'))
+
+    monkeypatch.setattr('flask_pluginengine.templating.PrefixIgnoringFileSystemLoader.__init__', init_loader)
     return engine
 
 
@@ -114,7 +111,7 @@ def test_fail_pluginengine_namespace(flask_app):
     Fail if PLUGINENGINE_NAMESPACE is not defined
     """
     del flask_app.config['PLUGINENGINE_NAMESPACE']
-    with raises(Exception) as exc_info:
+    with pytest.raises(Exception) as exc_info:
         PluginEngine(app=flask_app)
     assert 'PLUGINENGINE_NAMESPACE' in str(exc_info.value)
 
@@ -226,7 +223,7 @@ def test_double_load(flask_app, loaded_engine):
     Fail if the engine tries to load the plugins a second time
     """
 
-    with raises(RuntimeError) as exc_info:
+    with pytest.raises(RuntimeError) as exc_info:
         loaded_engine.load_plugins(flask_app)
     assert 'Plugins already loaded' in str(exc_info.value)
 
@@ -264,35 +261,139 @@ def test_repr_state(flask_app, loaded_engine):
     Check that repr(PluginEngineState(...)) is OK
     """
     from flask_pluginengine.util import get_state
-    assert repr(get_state(flask_app)) == ("<_PluginEngineState(<PluginEngine()>, <TestFlask 'test_engine'>, "
+    assert repr(get_state(flask_app)) == ("<_PluginEngineState(<PluginEngine()>, <PluginFlask 'test_engine'>, "
                                           "{'espresso': <EspressoModule(espresso) bound to "
-                                          "<TestFlask 'test_engine'>>})>")
+                                          "<PluginFlask 'test_engine'>>})>")
 
 
-def test_render_template(monkeypatch, flask_app, loaded_engine):
+def test_render_template(flask_app, loaded_engine):
     """
     Check that app/plugin templates are separate
     """
-    monkeypatch.setattr('flask_pluginengine.mixins.FileSystemLoader', MockLoader)
     with flask_app.app_context():
         assert render_template('test.txt') == 'core test'
         assert render_template('espresso:test.txt') == 'plugin test'
 
 
-def test_render_plugin_template(monkeypatch, flask_app, loaded_engine):
+def test_render_plugin_template(flask_app_ctx, loaded_engine):
     """
     Check that render_plugin_template works
     """
-    monkeypatch.setattr('flask_pluginengine.mixins.FileSystemLoader', MockLoader)
-    with flask_app.app_context():
-        plugin = loaded_engine.get_plugin('espresso')
-        text = 'plugin test'
-        with plugin.plugin_context():
-            assert render_template('espresso:test.txt') == text
-            assert render_plugin_template('test.txt') == text
-            assert render_plugin_template('espresso:test.txt') == text
-        # explicit plugin name works outside context
+    plugin = loaded_engine.get_plugin('espresso')
+    text = 'plugin test'
+    with plugin.plugin_context():
+        assert render_template('espresso:test.txt') == text
+        assert render_plugin_template('test.txt') == text
         assert render_plugin_template('espresso:test.txt') == text
-        # implicit plucin name fails outside context
-        with raises(RuntimeError):
-            render_plugin_template('test.txt')
+    # explicit plugin name works outside context
+    assert render_plugin_template('espresso:test.txt') == text
+    # implicit plucin name fails outside context
+    with pytest.raises(RuntimeError):
+        render_plugin_template('test.txt')
+
+
+def _parse_template_data(data):
+    items = [re.search(r'(\S+)=(.+)', item.strip()).groups() for item in data.strip().splitlines() if item.strip()]
+    rv = dict(items)
+    assert len(rv) == len(items)
+    return rv
+
+
+@pytest.mark.parametrize('in_plugin_ctx', (False, True))
+def test_template_plugin_contexts_macros(flask_app_ctx, loaded_engine, in_plugin_ctx):
+    """
+    Check that the plugin context is handled properly in macros
+    """
+    plugin = loaded_engine.get_plugin('espresso')
+    with plugin_context(plugin if in_plugin_ctx else None):
+        assert _parse_template_data(render_template('simple_macro.txt')) == {
+            'macro': 'core-imp-macro/core/undef',
+            'macro_call': 'core-imp-macro/core/core'
+        }
+        assert _parse_template_data(render_template('espresso:simple_macro.txt')) == {
+            'macro': 'core-imp-macro/core/undef',
+            'macro_call': 'core-imp-macro/core/espresso'
+        }
+
+
+@pytest.mark.parametrize('in_plugin_ctx', (False, True))
+def test_template_plugin_contexts_macros_extends(flask_app_ctx, loaded_engine, in_plugin_ctx):
+    """
+    Check that the plugin context is handled properly in macros with template inheritance
+    """
+    plugin = loaded_engine.get_plugin('espresso')
+    with plugin_context(plugin if in_plugin_ctx else None):
+        assert _parse_template_data(render_template('simple_macro_extends.txt')) == {
+            'core_macro': 'core-macro/core/undef',
+            'core_macro_call': 'core-macro/core/core',
+        }
+        assert _parse_template_data(render_template('espresso:simple_macro_extends.txt')) == {
+            'plugin_macro': 'core-macro/core/undef',
+            'plugin_macro_call': 'core-macro/core/espresso',
+        }
+
+
+@pytest.mark.parametrize('in_plugin_ctx', (False, True))
+def test_template_plugin_contexts_macros_extends_base(flask_app_ctx, loaded_engine, in_plugin_ctx):
+    """
+    Check that the plugin context is handled properly in macros defined/called in the base tpl
+    """
+    plugin = loaded_engine.get_plugin('espresso')
+    with plugin_context(plugin if in_plugin_ctx else None):
+        assert _parse_template_data(render_template('simple_macro_extends_base.txt')) == {
+            'core_macro': 'core-macro/core/undef',
+            'core_macro_call': 'core-macro/core/core',
+        }
+        assert _parse_template_data(render_template('espresso:simple_macro_extends_base.txt')) == {
+            'core_macro': 'core-macro/core/undef',
+            'core_macro_call': 'core-macro/core/core',
+        }
+
+
+@pytest.mark.parametrize('in_plugin_ctx', (False, True))
+def test_template_plugin_contexts(flask_app_ctx, loaded_engine, in_plugin_ctx):
+    """
+    Check that the plugin contexts are correct in all cases
+    """
+    plugin = loaded_engine.get_plugin('espresso')
+    with plugin_context(plugin if in_plugin_ctx else None):
+        assert _parse_template_data(render_template('context.txt')) == {
+            'core_main': 'core',
+            'core_block_a': 'core-a/core',
+            'core_block_b': 'core-b/core',
+            'core_macro': 'core-macro/core/undef',
+            'core_macro_call': 'core-macro/core/core',
+            'core_macro_imp': 'core-imp-macro/core/undef',
+            'core_macro_imp_call': 'core-imp-macro/core/core',
+            'core_macro_plugin_imp': 'plugin-imp-macro/espresso/undef',
+            'core_macro_plugin_imp_call': 'plugin-imp-macro/espresso/core',
+            'core_inc_core': 'core test',
+            'core_inc_plugin': 'plugin test',
+        }
+        assert _parse_template_data(render_template('espresso:context.txt')) == {
+            'core_main': 'core',
+            'core_block_a': 'plugin-a/espresso',
+            'core_block_b': 'core-b/core',
+            'core_macro': 'core-macro/core/undef',
+            'core_macro_call': 'core-macro/core/core',
+            'core_macro_in_plugin': 'core-macro/core/undef',
+            'core_macro_in_plugin_call': 'core-macro/core/espresso',
+            'core_macro_imp': 'core-imp-macro/core/undef',
+            'core_macro_imp_call': 'core-imp-macro/core/core',
+            'core_macro_plugin_imp': 'plugin-imp-macro/espresso/undef',
+            'core_macro_plugin_imp_call': 'plugin-imp-macro/espresso/core',
+            'plugin_macro': 'plugin-macro/espresso/undef',
+            'plugin_macro_call': 'plugin-macro/espresso/espresso',
+            'core_inc_core': 'core test',
+            'core_inc_plugin': 'plugin test',
+            'plugin_inc_core': 'core test',
+            'plugin_inc_plugin': 'plugin test',
+        }
+
+
+def test_template_invalid(flask_app_ctx, loaded_engine):
+    """
+    Check that loading an invalid plugin template fails
+    """
+    with pytest.raises(TemplateNotFound):
+        render_template('nosuchplugin:foobar.txt')

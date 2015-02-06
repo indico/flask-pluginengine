@@ -1,0 +1,3 @@
+{% macro mip() -%}
+    plugin-imp-macro/{{ whereami() }}/{{ caller() if caller else 'undef' }}
+{%- endmacro %}

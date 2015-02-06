@@ -1,0 +1,15 @@
+{% from 'macro.txt' import mi %}
+{% from 'espresso:macro.txt' import mip %}
+{% macro m() %}core-macro/{{ whereami() }}/{{ caller() if caller else 'undef' }}{% endmacro %}
+core_main={{ whereami() }}
+core_block_a={% block a %}core-a/{{ whereami() }}{% endblock %}
+core_block_b={% block b %}core-b/{{ whereami() }}{% endblock %}
+core_macro={{ m() }}
+core_macro_call={% call m() %}{{ whereami() }}{% endcall %}
+core_macro_imp={{ mi() }}
+core_macro_imp_call={% call mi() %}{{ whereami() }}{% endcall %}
+core_macro_plugin_imp={{ mip() }}
+core_macro_plugin_imp_call={% call mip() %}{{ whereami() }}{% endcall %}
+core_inc_core={% include 'test.txt' %}
+core_inc_plugin={% include 'espresso:test.txt' %}
+{% block extra %}{% endblock %}

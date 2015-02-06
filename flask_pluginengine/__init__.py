@@ -9,12 +9,16 @@ from __future__ import unicode_literals
 from .engine import PluginEngine
 from .globals import current_plugin
 from .mixins import (PluginBlueprintSetupState, PluginBlueprintSetupStateMixin, PluginBlueprint, PluginBlueprintMixin,
-                     PluginFlask, PluginFlaskMixin, PluginPrefixLoader)
+                     PluginFlask, PluginFlaskMixin)
 from .plugin import Plugin, uses, depends, render_plugin_template, url_for_plugin
 from .signals import plugins_loaded
-from .util import with_plugin_context, wrap_in_plugin_context, trim_docstring
+from .templating import PluginPrefixLoader
+from .util import with_plugin_context, wrap_in_plugin_context, trim_docstring, plugin_context
+from .patches import patch
+
+patch()
 
 __all__ = ('PluginEngine', 'current_plugin', 'PluginBlueprintSetupState', 'PluginBlueprintSetupStateMixin',
-           'PluginBlueprint', 'PluginBlueprintMixin', 'PluginFlask', 'PluginFlaskMixin', 'PluginPrefixLoader', 'Plugin',
-           'uses', 'depends', 'render_plugin_template', 'url_for_plugin', 'plugins_loaded', 'with_plugin_context',
-           'trim_docstring', 'wrap_in_plugin_context')
+           'PluginBlueprint', 'PluginBlueprintMixin', 'PluginFlask', 'PluginFlaskMixin', 'Plugin', 'uses', 'depends',
+           'render_plugin_template', 'url_for_plugin', 'plugins_loaded', 'PluginPrefixLoader', 'with_plugin_context',
+           'wrap_in_plugin_context', 'trim_docstring', 'plugin_context')

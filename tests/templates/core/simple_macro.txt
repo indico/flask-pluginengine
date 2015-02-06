@@ -1,0 +1,3 @@
+{% from 'macro.txt' import mi -%}
+macro={{ mi() }}
+macro_call={% call mi() %}{{ whereami() }}{% endcall %}
