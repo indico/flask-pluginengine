@@ -2,8 +2,14 @@ language: python
 python:
   - "2.7"
   - "3.3"
-#  - "3.4"
-install: pip install coveralls
+  - "3.4"
+env:
+  - DEPS=release
+  - DEPS=devel
+install:
+  - '[[ "$DEPS" == "devel" ]] && pip install git+https://github.com/mitsuhiko/jinja2.git || :'
+  - '[[ "$DEPS" == "devel" ]] && pip install git+https://github.com/mitsuhiko/flask.git || :'
+  - pip install coveralls
 script: python setup.py test
 after_success:
   - coveralls
