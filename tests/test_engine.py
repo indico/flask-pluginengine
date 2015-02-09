@@ -41,6 +41,10 @@ class OtherVersionPlugin(Plugin):
     version = '2.0'
 
 
+class NonDescriptivePlugin(Plugin):
+    """NonDescriptivePlugin"""
+
+
 class MockEntryPoint(EntryPoint):
     def load(self):
         if self.name == 'importfail':
@@ -49,6 +53,8 @@ class MockEntryPoint(EntryPoint):
             return ImposterPlugin
         elif self.name == 'otherversion':
             return OtherVersionPlugin
+        elif self.name == 'nondescriptive':
+            return NonDescriptivePlugin
         else:
             return EspressoModule
 
@@ -83,6 +89,7 @@ def mock_entry_point(monkeypatch):
         return {
             'espresso': [MockEntryPoint('espresso', 'test.plugin')],
             'otherversion': [MockEntryPoint('otherversion', 'test.plugin')],
+            'nondescriptive': [MockEntryPoint('nondescriptive', 'test.plugin')],
             'someotherstuff': [],
             'doubletrouble': [MockEntryPoint('double', 'double'), MockEntryPoint('double', 'double')],
             'importfail': [MockEntryPoint('importfail', 'test.importfail')],
@@ -142,6 +149,15 @@ def test_load(mock_entry_point, flask_app, engine):
         assert plugin.description == 'Creamy espresso out of your Flask app'
         assert plugin.version == '1.2.3'
         assert plugin.package_version == '1.2.3'
+
+
+def test_no_description(mock_entry_point, flask_app, engine):
+    flask_app.config['PLUGINENGINE_PLUGINS'] = ['nondescriptive']
+    engine.load_plugins(flask_app)
+    with flask_app.app_context():
+        plugin = engine.get_active_plugins()['nondescriptive']
+        assert plugin.title == 'NonDescriptivePlugin'
+        assert plugin.description == 'no description available'
 
 
 def test_custom_version(mock_entry_point, flask_app, engine):
