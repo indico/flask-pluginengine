@@ -5,12 +5,14 @@
 # and/or modify it under the terms of the Revised BSD License.
 
 from __future__ import unicode_literals
+from flask import current_app
 
 import sys
 from contextlib import contextmanager
-from functools import wraps, update_wrapper
+from functools import wraps
+from types import FunctionType
 
-from ._compat import iteritems
+from ._compat import iteritems, string_types
 from .globals import _plugin_ctx_stack
 
 
@@ -66,16 +68,57 @@ def plugin_context(plugin):
             yield
 
 
+class equality_preserving_decorator(object):
+    """Decorator which is considered equal with the original function"""
+    def __init__(self, orig_func):
+        self.orig_func = orig_func
+        self.wrapper = None
+
+    def __call__(self, *args, **kwargs):
+        if self.wrapper is None:
+            assert len(args) == 1
+            assert not kwargs
+            self.wrapper = args[0]
+            return self
+        else:
+            return self.wrapper(*args, **kwargs)
+
+    def __eq__(self, other):
+        if isinstance(other, FunctionType):
+            return self.orig_func == other
+        else:
+            return self.orig_func == other.orig_func
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __hash__(self):
+        return hash(self.orig_func)
+
+    def __repr__(self):
+        return '<decorated {!r}>'.format(self.orig_func)
+
+
+def plugin_name_from_template_name(name):
+    if not name:
+        return None
+    return name.split(':', 1)[0] if ':' in name else None
+
+
 def wrap_iterator_in_plugin_context(plugin, gen_or_func):
     """Runs an iterator inside a plugin context"""
     # Heavily based on Flask's stream_with_context
     try:
         gen = iter(gen_or_func)
     except TypeError:
+        @equality_preserving_decorator(gen_or_func)
         def decorator(*args, **kwargs):
             return wrap_iterator_in_plugin_context(plugin, gen_or_func(*args, **kwargs))
 
-        return update_wrapper(decorator, gen_or_func)
+        return decorator
+
+    if plugin is not None and isinstance(plugin, string_types):
+        plugin = get_state(current_app).plugin_engine.get_plugin(plugin)
 
     def generator():
         with plugin_context(plugin):
@@ -99,11 +142,12 @@ def wrap_macro_in_plugin_context(plugin, macro):
     """Wraps a macro inside a plugin context"""
     func = macro._func
 
+    @wraps(func)
     def decorator(*args, **kwargs):
         with plugin_context(plugin):
             return func(*args, **kwargs)
 
-    macro._func = update_wrapper(decorator, func)
+    macro._func = decorator
 
 
 class classproperty(property):

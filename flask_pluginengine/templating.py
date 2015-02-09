@@ -61,8 +61,6 @@ class PluginPrefixLoader(PrefixLoader):
             raise RuntimeError('Plugin template {} has no plugin'.format(name))
         # Keep a reference to the plugin so we don't have to get it from the name later
         tpl.plugin = plugin
-        # Execute all local blocks (i.e. defined in the plugin template) inside the plugin context
-        tpl.blocks = {name: wrap_iterator_in_plugin_context(plugin, func) for name, func in iteritems(tpl.blocks)}
         return tpl
 
 

@@ -9,8 +9,9 @@ from __future__ import unicode_literals
 import jinja2.compiler
 import jinja2.runtime
 from flask import current_app
+from jinja2.compiler import dict_item_iter
 
-from .util import wrap_macro_in_plugin_context, get_state
+from .util import wrap_macro_in_plugin_context, get_state, plugin_name_from_template_name
 
 
 class PluginJinjaContext(jinja2.runtime.Context):
@@ -32,6 +33,14 @@ class PluginCodeGenerator(jinja2.compiler.CodeGenerator):
         super(PluginCodeGenerator, self).__init__(*args, **kwargs)
         self.inside_call_block = False
 
+    def visit_Template(self, node, frame=None):
+        super(PluginCodeGenerator, self).visit_Template(node, frame)
+        plugin_name = plugin_name_from_template_name(self.name)
+        # Execute all blocks inside the plugin context
+        self.writeline('from flask_pluginengine.util import wrap_iterator_in_plugin_context')
+        self.writeline('blocks = {name: wrap_iterator_in_plugin_context(%r, func) for name, func in blocks.%s()}' %
+                       (plugin_name, dict_item_iter))
+
     def visit_CallBlock(self, *args, **kwargs):
         self.inside_call_block = True
         # ths parent's function ends up calling `macro_def` to create the macro function
@@ -43,7 +52,7 @@ class PluginCodeGenerator(jinja2.compiler.CodeGenerator):
         if self.inside_call_block:
             # we don't have access to the actual Template object here, but we do have
             # access to its name which gives us the plugin name.
-            plugin_name = self.name.split(':', 1)[0] if ':' in self.name else None
+            plugin_name = plugin_name_from_template_name(self.name)
             self.writeline('caller._plugin_name = {!r}'.format(plugin_name))
 
 
