@@ -61,8 +61,10 @@ def plugin_context(plugin):
     if plugin is None:
         # Explicitly push a None plugin to disable an existing plugin context
         _plugin_ctx_stack.push(None)
-        yield
-        assert _plugin_ctx_stack.pop() is None
+        try:
+            yield
+        finally:
+            assert _plugin_ctx_stack.pop() is None, 'Popped wrong plugin'
     else:
         with plugin.instance.plugin_context():
             yield
