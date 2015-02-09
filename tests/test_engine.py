@@ -67,6 +67,7 @@ def flask_app():
 def flask_app_ctx(flask_app):
     with flask_app.app_context():
         yield flask_app
+        assert not current_plugin, 'leaked plugin context'
 
 
 @pytest.fixture
