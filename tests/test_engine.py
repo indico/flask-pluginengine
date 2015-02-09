@@ -10,7 +10,7 @@ from pkg_resources import EntryPoint, Distribution
 
 import pytest
 from jinja2 import TemplateNotFound
-from flask import render_template
+from flask import render_template, Flask
 
 from flask_pluginengine import (PluginEngine, plugins_loaded, Plugin, render_plugin_template, current_plugin,
                                 plugin_context, PluginFlask)
@@ -217,6 +217,29 @@ def test_fail_not_subclass(mock_entry_point, flask_app, engine):
     with flask_app.app_context():
         assert len(engine.get_failed_plugins()) == 1
         assert len(engine.get_active_plugins()) == 0
+
+
+def test_instance_not_loaded(mock_entry_point, flask_app, engine):
+    """
+    Fail when trying to get the instance for a plugin that's not loaded
+    """
+
+    other_app = Flask(__name__)
+    other_app.config['TESTING'] = True
+    other_app.config['PLUGINENGINE_NAMESPACE'] = 'test'
+    other_app.config['PLUGINENGINE_PLUGINS'] = []
+    engine.init_app(other_app)
+    with other_app.app_context():
+        with pytest.raises(RuntimeError):
+            EspressoModule.instance
+
+
+def test_instance(flask_app_ctx, loaded_engine):
+    """
+    Check if Plugin.instance points to the correct instance
+    """
+
+    assert EspressoModule.instance is loaded_engine.get_plugin(EspressoModule.name)
 
 
 def test_double_load(flask_app, loaded_engine):

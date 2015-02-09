@@ -62,7 +62,7 @@ def plugin_context(plugin):
         yield
         assert _plugin_ctx_stack.pop() is None
     else:
-        with plugin.plugin_context():
+        with plugin.instance.plugin_context():
             yield
 
 
@@ -104,6 +104,11 @@ def wrap_macro_in_plugin_context(plugin, macro):
             return func(*args, **kwargs)
 
     macro._func = update_wrapper(decorator, func)
+
+
+class classproperty(property):
+    def __get__(self, obj, type=None):
+        return self.fget.__get__(None, type)()
 
 
 def make_hashable(obj):

@@ -7,11 +7,11 @@
 from __future__ import unicode_literals
 from contextlib import contextmanager
 
-from flask import render_template, url_for
+from flask import render_template, url_for, current_app
 
 from ._compat import string_types
 from .globals import _plugin_ctx_stack, current_plugin
-from .util import wrap_in_plugin_context, trim_docstring
+from .util import wrap_in_plugin_context, trim_docstring, classproperty, get_state
 
 
 def depends(*plugins):
@@ -106,14 +106,25 @@ class Plugin(object):
         """
         pass
 
-    @property
-    def title(self):
-        parts = trim_docstring(self.__doc__).split('\n', 1)
+    @classproperty
+    @classmethod
+    def instance(cls):
+        """The Plugin instance used by the current app"""
+        instance = get_state(current_app).plugin_engine.get_plugin(cls.name)
+        if instance is None:
+            raise RuntimeError('Plugin is not active in the current app')
+        return instance
+
+    @classproperty
+    @classmethod
+    def title(cls):
+        parts = trim_docstring(cls.__doc__).split('\n', 1)
         return parts[0].strip()
 
-    @property
-    def description(self):
-        parts = trim_docstring(self.__doc__).split('\n', 1)
+    @classproperty
+    @classmethod
+    def description(cls):
+        parts = trim_docstring(cls.__doc__).split('\n', 1)
         try:
             return parts[1].strip()
         except IndexError:
