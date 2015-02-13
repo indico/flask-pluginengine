@@ -1,0 +1,8 @@
+{% from 'nested_calls.txt' import outer, inner %}
+
+outer={%- call outer() -%}
+    {{ whereami() }}
+    inner={%- call inner() -%}
+        {{ whereami() }}
+    {%- endcall -%}
+{%- endcall -%}

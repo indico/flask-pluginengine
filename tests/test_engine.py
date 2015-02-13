@@ -391,6 +391,23 @@ def test_template_plugin_contexts_macros_extends_base(flask_app_ctx, loaded_engi
 
 
 @pytest.mark.parametrize('in_plugin_ctx', (False, True))
+def test_template_plugin_contexts_macros_nested_calls(flask_app_ctx, loaded_engine, in_plugin_ctx):
+    """
+    Check that the plugin context is handled properly when using nested call blocks
+    """
+    plugin = loaded_engine.get_plugin('espresso')
+    with plugin_context(plugin if in_plugin_ctx else None):
+        assert _parse_template_data(render_template('nested_calls.txt')) == {
+            'outer': 'core-outer-macro/core/core',
+            'inner': 'core-inner-macro/core/core',
+        }
+        assert _parse_template_data(render_template('espresso:nested_calls.txt')) == {
+            'outer': 'core-outer-macro/core/espresso',
+            'inner': 'core-inner-macro/core/espresso',
+        }
+
+
+@pytest.mark.parametrize('in_plugin_ctx', (False, True))
 def test_template_plugin_contexts_super(flask_app_ctx, loaded_engine, in_plugin_ctx):
     """
     Check that the plugin context is handled properly when using `super()`

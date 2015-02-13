@@ -31,7 +31,7 @@ class PluginJinjaContext(jinja2.runtime.Context):
 class PluginCodeGenerator(jinja2.compiler.CodeGenerator):
     def __init__(self, *args, **kwargs):
         super(PluginCodeGenerator, self).__init__(*args, **kwargs)
-        self.inside_call_block = False
+        self.inside_call_blocks = []
 
     def visit_Template(self, node, frame=None):
         super(PluginCodeGenerator, self).visit_Template(node, frame)
@@ -42,14 +42,15 @@ class PluginCodeGenerator(jinja2.compiler.CodeGenerator):
                        (plugin_name, dict_item_iter))
 
     def visit_CallBlock(self, *args, **kwargs):
-        self.inside_call_block = True
+        sentinel = object()
+        self.inside_call_blocks.append(sentinel)
         # ths parent's function ends up calling `macro_def` to create the macro function
         super(PluginCodeGenerator, self).visit_CallBlock(*args, **kwargs)
-        self.inside_call_block = False
+        assert self.inside_call_blocks.pop() is sentinel
 
     def macro_def(self, *args, **kwargs):
         super(PluginCodeGenerator, self).macro_def(*args, **kwargs)
-        if self.inside_call_block:
+        if self.inside_call_blocks:
             # we don't have access to the actual Template object here, but we do have
             # access to its name which gives us the plugin name.
             plugin_name = plugin_name_from_template_name(self.name)
