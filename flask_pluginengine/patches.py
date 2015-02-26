@@ -10,11 +10,13 @@ import jinja2.compiler
 import jinja2.runtime
 from flask import current_app
 from jinja2.compiler import dict_item_iter
+from jinja2.utils import internalcode
 
 from .util import wrap_macro_in_plugin_context, get_state, plugin_name_from_template_name
 
 
 class PluginJinjaContext(jinja2.runtime.Context):
+    @internalcode
     def call(__self, __obj, *args, **kwargs):
         # A caller must run in the containing template's context instead of the
         # one containing the macro. This is achieved by storing the plugin name

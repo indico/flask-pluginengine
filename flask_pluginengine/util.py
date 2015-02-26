@@ -6,6 +6,7 @@
 
 from __future__ import unicode_literals
 from flask import current_app
+from jinja2.utils import internalcode
 
 import sys
 from contextlib import contextmanager
@@ -122,6 +123,7 @@ def wrap_iterator_in_plugin_context(plugin, gen_or_func):
     if plugin is not None and isinstance(plugin, string_types):
         plugin = get_state(current_app).plugin_engine.get_plugin(plugin)
 
+    @internalcode
     def generator():
         with plugin_context(plugin):
             # Dummy sentinel.  Has to be inside the context block or we're
