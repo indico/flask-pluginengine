@@ -5,13 +5,14 @@
 # and/or modify it under the terms of the Revised BSD License.
 
 from __future__ import unicode_literals
-from flask import current_app
-from jinja2.utils import internalcode
 
 import sys
 from contextlib import contextmanager
 from functools import wraps
 from types import FunctionType
+
+from flask import current_app
+from jinja2.utils import internalcode
 
 from ._compat import iteritems, string_types
 from .globals import _plugin_ctx_stack

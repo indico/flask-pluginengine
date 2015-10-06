@@ -5,6 +5,7 @@
 # and/or modify it under the terms of the Revised BSD License.
 
 from __future__ import unicode_literals
+
 from pkg_resources import iter_entry_points, get_distribution
 
 from flask import current_app

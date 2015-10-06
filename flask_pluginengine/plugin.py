@@ -5,6 +5,7 @@
 # and/or modify it under the terms of the Revised BSD License.
 
 from __future__ import unicode_literals
+
 from contextlib import contextmanager
 
 from flask import render_template, url_for, current_app
