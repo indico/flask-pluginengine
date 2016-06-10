@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import jinja2.compiler
 import jinja2.runtime
 from flask import current_app
+from jinja2 import Environment
 from jinja2.compiler import dict_item_iter
 from jinja2.utils import internalcode
 
@@ -61,5 +62,7 @@ class PluginCodeGenerator(jinja2.compiler.CodeGenerator):
 
 def patch():
     """Applies monkey-patches to Jinja"""
-    jinja2.runtime.Context = PluginJinjaContext
-    jinja2.compiler.CodeGenerator = PluginCodeGenerator
+    assert Environment.context_class is jinja2.runtime.Context
+    assert Environment.code_generator_class is jinja2.compiler.CodeGenerator
+    Environment.context_class = PluginJinjaContext
+    Environment.code_generator_class = PluginCodeGenerator

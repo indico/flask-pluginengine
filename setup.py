@@ -41,6 +41,7 @@ setup(
     platforms='any',
     install_requires=[
         'Flask>=0.7',
+        'Jinja2>=2.8',
         'blinker'
     ],
     tests_require=['pytest', 'pytest-cov'],
