@@ -7,11 +7,13 @@
 import os
 
 from flask import current_app
+from flask.templating import Environment
 from jinja2 import FileSystemLoader, PrefixLoader, TemplateNotFound, Template
 from jinja2.runtime import Macro
 from jinja2.utils import internalcode
 
 from ._compat import iteritems
+from .patches import PluginJinjaContext, PluginCodeGenerator
 from .util import get_state, wrap_iterator_in_plugin_context, wrap_macro_in_plugin_context
 
 
@@ -86,3 +88,12 @@ class PluginContextTemplate(Template):
                 continue
             wrap_macro_in_plugin_context(self.plugin, macro)
         return module
+
+
+class PluginEnvironmentMixin(object):
+    code_generator_class = PluginCodeGenerator
+    context_class = PluginJinjaContext
+
+
+class PluginEnvironment(PluginEnvironmentMixin, Environment):
+    pass

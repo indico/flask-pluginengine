@@ -14,9 +14,6 @@ from .plugin import Plugin, uses, depends, render_plugin_template, url_for_plugi
 from .signals import plugins_loaded
 from .templating import PluginPrefixLoader
 from .util import with_plugin_context, wrap_in_plugin_context, trim_docstring, plugin_context
-from .patches import patch
-
-patch()
 
 __all__ = ('PluginEngine', 'current_plugin', 'PluginBlueprintSetupState', 'PluginBlueprintSetupStateMixin',
            'PluginBlueprint', 'PluginBlueprintMixin', 'PluginFlask', 'PluginFlaskMixin', 'Plugin', 'uses', 'depends',
