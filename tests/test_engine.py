@@ -327,7 +327,7 @@ def test_render_plugin_template(flask_app_ctx, loaded_engine):
         assert render_plugin_template('espresso:test.txt') == text
     # explicit plugin name works outside context
     assert render_plugin_template('espresso:test.txt') == text
-    # implicit plucin name fails outside context
+    # implicit plugin name fails outside context
     with pytest.raises(RuntimeError):
         render_plugin_template('test.txt')
 
