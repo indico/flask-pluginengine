@@ -9,12 +9,13 @@ import os
 from flask import current_app
 from flask.templating import Environment
 from jinja2 import FileSystemLoader, PrefixLoader, TemplateNotFound, Template
-from jinja2.runtime import Macro
+from jinja2.compiler import dict_item_iter, CodeGenerator
+from jinja2.runtime import Macro, Context
 from jinja2.utils import internalcode
 
 from ._compat import iteritems
-from .patches import PluginJinjaContext, PluginCodeGenerator
-from .util import get_state, wrap_iterator_in_plugin_context, wrap_macro_in_plugin_context
+from .util import (wrap_iterator_in_plugin_context, wrap_macro_in_plugin_context, get_state,
+                   plugin_name_from_template_name)
 
 
 class PrefixIgnoringFileSystemLoader(FileSystemLoader):
@@ -88,6 +89,50 @@ class PluginContextTemplate(Template):
                 continue
             wrap_macro_in_plugin_context(self.plugin, macro)
         return module
+
+
+class PluginJinjaContext(Context):
+    @internalcode
+    def call(__self, __obj, *args, **kwargs):
+        # A caller must run in the containing template's context instead of the
+        # one containing the macro. This is achieved by storing the plugin name
+        # on the anonymous caller macro.
+        if 'caller' in kwargs:
+            caller = kwargs['caller']
+            plugin = None
+            if caller._plugin_name:
+                plugin = get_state(current_app).plugin_engine.get_plugin(caller._plugin_name)
+            wrap_macro_in_plugin_context(plugin, caller)
+        return super(PluginJinjaContext, __self).call(__obj, *args, **kwargs)
+
+
+class PluginCodeGenerator(CodeGenerator):
+    def __init__(self, *args, **kwargs):
+        super(PluginCodeGenerator, self).__init__(*args, **kwargs)
+        self.inside_call_blocks = []
+
+    def visit_Template(self, node, frame=None):
+        super(PluginCodeGenerator, self).visit_Template(node, frame)
+        plugin_name = plugin_name_from_template_name(self.name)
+        # Execute all blocks inside the plugin context
+        self.writeline('from flask_pluginengine.util import wrap_iterator_in_plugin_context')
+        self.writeline('blocks = {name: wrap_iterator_in_plugin_context(%r, func) for name, func in blocks.%s()}' %
+                       (plugin_name, dict_item_iter))
+
+    def visit_CallBlock(self, *args, **kwargs):
+        sentinel = object()
+        self.inside_call_blocks.append(sentinel)
+        # ths parent's function ends up calling `macro_def` to create the macro function
+        super(PluginCodeGenerator, self).visit_CallBlock(*args, **kwargs)
+        assert self.inside_call_blocks.pop() is sentinel
+
+    def macro_def(self, *args, **kwargs):
+        super(PluginCodeGenerator, self).macro_def(*args, **kwargs)
+        if self.inside_call_blocks:
+            # we don't have access to the actual Template object here, but we do have
+            # access to its name which gives us the plugin name.
+            plugin_name = plugin_name_from_template_name(self.name)
+            self.writeline('caller._plugin_name = {!r}'.format(plugin_name))
 
 
 class PluginEnvironmentMixin(object):
