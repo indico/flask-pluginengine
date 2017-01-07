@@ -27,8 +27,8 @@ class PrefixIgnoringFileSystemLoader(FileSystemLoader):
 
     def get_source(self, environment, template):
         name = template.split(':', 1)[1]
-        contents, _, uptodate = super(PrefixIgnoringFileSystemLoader, self).get_source(environment, name)
-        return contents, template, uptodate
+        source, filename, uptodate = super(PrefixIgnoringFileSystemLoader, self).get_source(environment, name)
+        return source, filename, uptodate
 
     def list_templates(self):  # pragma: no cover
         raise TypeError('this loader cannot iterate over all templates')
