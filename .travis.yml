@@ -7,9 +7,12 @@ python:
   - "3.5"
   - "3.6"
 env:
+  - DEPS=lowest
   - DEPS=release
   - DEPS=devel
 install:
+  - '[[ "$DEPS" == "lowest" ]] && pip install jinja2==2.8 || :'
+  - '[[ "$DEPS" == "lowest" ]] && pip install flask==0.11 || :'
   - '[[ "$DEPS" == "devel" ]] && pip install git+https://github.com/mitsuhiko/jinja2.git || :'
   - '[[ "$DEPS" == "devel" ]] && pip install git+https://github.com/mitsuhiko/flask.git || :'
   - pip install pytest pytest-cov pytest-pep8 coveralls
