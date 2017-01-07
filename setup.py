@@ -30,7 +30,7 @@ class PyTest(TestCommand):
 
 setup(
     name='Flask-PluginEngine',
-    version='0.2',
+    version='0.2.1',
     url='https://github.com/indico/flask-pluginengine',
     license='BSD',
     author='Indico Team',
