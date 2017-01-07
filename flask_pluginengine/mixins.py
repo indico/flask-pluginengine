@@ -12,7 +12,7 @@ from flask.helpers import locked_cached_property
 from jinja2 import ChoiceLoader
 
 from .globals import current_plugin
-from .templating import PluginPrefixLoader, PluginContextTemplate, PluginEnvironment
+from .templating import PluginPrefixLoader, PluginEnvironment
 from .util import wrap_in_plugin_context
 
 
@@ -50,11 +50,6 @@ class PluginFlaskMixin(object):
     def create_global_jinja_loader(self):
         default_loader = super(PluginFlaskMixin, self).create_global_jinja_loader()
         return ChoiceLoader([self.plugin_jinja_loader(self), default_loader])
-
-    def create_jinja_environment(self):
-        env = super(PluginFlaskMixin, self).create_jinja_environment()
-        env.template_class = PluginContextTemplate
-        return env
 
 
 class PluginBlueprintSetupState(PluginBlueprintSetupStateMixin, BlueprintSetupState):

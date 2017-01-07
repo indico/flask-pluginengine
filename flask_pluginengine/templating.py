@@ -138,6 +138,7 @@ class PluginCodeGenerator(CodeGenerator):
 class PluginEnvironmentMixin(object):
     code_generator_class = PluginCodeGenerator
     context_class = PluginJinjaContext
+    template_class = PluginContextTemplate
 
 
 class PluginEnvironment(PluginEnvironmentMixin, Environment):
