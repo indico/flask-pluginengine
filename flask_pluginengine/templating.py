@@ -24,6 +24,7 @@ class PrefixIgnoringFileSystemLoader(FileSystemLoader):
     The prefix is preserved in the template name but not when actually
     accessing the file system since the files there do not have prefixes.
     """
+
     def get_source(self, environment, template):
         name = template.split(':', 1)[1]
         contents, _, uptodate = super(PrefixIgnoringFileSystemLoader, self).get_source(environment, name)
@@ -35,6 +36,7 @@ class PrefixIgnoringFileSystemLoader(FileSystemLoader):
 
 class PluginPrefixLoader(PrefixLoader):
     """Prefix loader that uses plugin names to select the load path"""
+
     def __init__(self, app):
         super(PluginPrefixLoader, self).__init__(None, ':')
         self.app = app

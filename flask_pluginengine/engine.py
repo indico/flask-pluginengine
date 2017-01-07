@@ -32,11 +32,11 @@ class PluginEngine(object):
             raise Exception('PLUGINENGINE_NAMESPACE is not set')
 
     def load_plugins(self, app, skip_failed=True):
-        """Loads all plugins for an application.
+        """Load all plugins for an application.
 
         :param app: A Flask application
         :param skip_failed: If True, initialize plugins even if some
-          plugins could not be loaded.
+                            plugins could not be loaded.
         :return: True if all plugins could have been loaded, False otherwise.
         """
         state = get_state(app)
@@ -53,7 +53,7 @@ class PluginEngine(object):
         return not state.failed
 
     def _import_plugins(self, app):
-        """Imports the plugins for an application.
+        """Import the plugins for an application.
 
         :param app: A Flask application
         :return: A dict mapping plugin names to plugin classes
@@ -92,7 +92,7 @@ class PluginEngine(object):
         return plugins
 
     def get_failed_plugins(self, app=None):
-        """Returns the list of plugins which could not be loaded.
+        """Return the list of plugins which could not be loaded.
 
         :param app: A Flask app. Defaults to the current app.
         """
@@ -100,7 +100,7 @@ class PluginEngine(object):
         return frozenset(state.failed)
 
     def get_active_plugins(self, app=None):
-        """Returns the currently active plugins.
+        """Return the currently active plugins.
 
         :param app: A Flask app. Defaults to the current app.
         :return: dict mapping plugin names to plugin instances
@@ -109,7 +109,7 @@ class PluginEngine(object):
         return ImmutableDict(state.plugins)
 
     def has_plugin(self, name, app=None):
-        """Returns if a plugin is loaded in the current app.
+        """Return if a plugin is loaded in the current app.
 
         :param name: Plugin name
         :param app: A Flask app. Defaults to the current app.

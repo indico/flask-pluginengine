@@ -19,7 +19,7 @@ from .globals import _plugin_ctx_stack
 
 
 def get_state(app):
-    """Gets the application-specific plugine engine data."""
+    """Get the application-specific plugine engine data."""
     assert 'pluginengine' in app.extensions, \
         'The pluginengine extension was not registered to the current application. ' \
         'Please make sure to call init_app() first.'
@@ -27,7 +27,7 @@ def get_state(app):
 
 
 def resolve_dependencies(plugins):
-    """Resolves dependencies between plugins and sorts them accordingly.
+    """Resolve dependencies between plugins and sort them accordingly.
 
     This function guarantees that a plugin is never loaded before any
     plugin it depends on. If multiple plugins are ready to be loaded,
@@ -55,7 +55,7 @@ def resolve_dependencies(plugins):
 
 @contextmanager
 def plugin_context(plugin):
-    """Enters a plugin context if a plugin is provided, otherwise clears it
+    """Enter a plugin context if a plugin is provided, otherwise clear it
 
     Useful for code which sometimes needs a plugin context, e.g.
     because it may be used in both the core and in a plugin.
@@ -110,7 +110,7 @@ def plugin_name_from_template_name(name):
 
 
 def wrap_iterator_in_plugin_context(plugin, gen_or_func):
-    """Runs an iterator inside a plugin context"""
+    """Run an iterator inside a plugin context"""
     # Heavily based on Flask's stream_with_context
     try:
         gen = iter(gen_or_func)
@@ -144,7 +144,7 @@ def wrap_iterator_in_plugin_context(plugin, gen_or_func):
 
 
 def wrap_macro_in_plugin_context(plugin, macro):
-    """Wraps a macro inside a plugin context"""
+    """Wrap a macro inside a plugin context"""
     func = macro._func
 
     @wraps(func)
@@ -161,7 +161,7 @@ class classproperty(property):
 
 
 def make_hashable(obj):
-    """Makes an object containing dicts and lists hashable."""
+    """Make an object containing dicts and lists hashable."""
     if isinstance(obj, list):
         return tuple(obj)
     elif isinstance(obj, dict):
@@ -207,7 +207,7 @@ def with_plugin_context(plugin):
 
 
 def trim_docstring(docstring):
-    """Trims a docstring based on the algorithm in PEP 257
+    """Trim a docstring based on the algorithm in PEP 257
 
     http://legacy.python.org/dev/peps/pep-0257/#handling-docstring-indentation
     """
