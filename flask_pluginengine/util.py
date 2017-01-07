@@ -147,6 +147,7 @@ def wrap_macro_in_plugin_context(plugin, macro):
     """Wrap a macro inside a plugin context"""
     func = macro._func
 
+    @internalcode
     @wraps(func)
     def decorator(*args, **kwargs):
         with plugin_context(plugin):
