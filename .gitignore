@@ -9,3 +9,5 @@ env/
 htmlcov/
 .coverage
 .cache/
+dist/
+build/
