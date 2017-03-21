@@ -4,9 +4,17 @@
 # Flask-PluginEngine is free software; you can redistribute it
 # and/or modify it under the terms of the Revised BSD License.
 
+import ast
+import re
 import sys
 
 from setuptools import setup
+
+
+with open('flask_pluginengine/__init__.py', 'rb') as f:
+    version_line = re.search(r'__version__\s+=\s+(.*)', f.read().decode('utf-8')).group(1)
+    version = str(ast.literal_eval(version_line))
+
 
 needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
 pytest_runner = ['pytest-runner'] if needs_pytest else []
@@ -14,7 +22,7 @@ pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 setup(
     name='Flask-PluginEngine',
-    version='0.2.1',
+    version=version,
     url='https://github.com/indico/flask-pluginengine',
     license='BSD',
     author='Indico Team',
