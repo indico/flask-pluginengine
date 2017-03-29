@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% for plugin in plugins %}
+        <div>{{ plugin.title }} - {{ plugin.description }}</div>
+    {% endfor %}
+    <a href="{{ url_for("plugin_example.hello_plugin") }}">Plugin page</a>
+{% endblock %}
