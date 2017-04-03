@@ -33,7 +33,7 @@ setup(
     platforms='any',
     install_requires=[
         'Flask>=0.11',
-        'Jinja2>=2.8',
+        'Jinja2>=2.8,!=2.9.5',
         'blinker'
     ],
     setup_requires=pytest_runner,
