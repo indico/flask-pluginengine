@@ -21,10 +21,10 @@ for plugin in active_plugins:
         app.register_blueprint(plugin.get_blueprint())
 
 
-@app.route("/")
+@app.route('/')
 def hello():
     return render_template('index.html', plugins=active_plugins)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run()
