@@ -30,7 +30,6 @@ setup(
     packages=['flask_pluginengine'],
     zip_safe=False,
     include_package_data=True,
-    platforms='any',
     install_requires=[
         'Flask>=0.11',
         'Jinja2>=2.8,!=2.9.5',
