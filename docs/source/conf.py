@@ -84,8 +84,14 @@ todo_include_todos = False
 #
 html_theme_path = ['_themes']
 html_theme = 'flask'
+html_theme_options = {
+    'index_logo_height': '120px',
+    'index_logo': 'pluginengine-long.png',
+    'github_fork': 'indico/flask-pluginengine'
+}
 
 html_sidebars = {
+    'index': ['sidebarintro.html', 'sourcelink.html', 'searchbox.html'],
     '**':  ['sidebarlogo.html', 'localtoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']
 }
 

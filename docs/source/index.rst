@@ -34,7 +34,6 @@ Informations on a specific functions, classes or methods.
 
 Indices and tables
 ------------------
-
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
