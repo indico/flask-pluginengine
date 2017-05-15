@@ -119,12 +119,20 @@ class Plugin(object):
     @classproperty
     @classmethod
     def title(cls):
+        """The title of the plugin.
+
+        Automatically retrieved from the docstring of the plugin class.
+        """
         parts = trim_docstring(cls.__doc__).split('\n', 1)
         return parts[0].strip()
 
     @classproperty
     @classmethod
     def description(cls):
+        """The description of the plugin.
+
+        Automatically retrieved from the docstring of the plugin class.
+        """
         parts = trim_docstring(cls.__doc__).split('\n', 1)
         try:
             return parts[1].strip()
