@@ -1,0 +1,4 @@
+Flask-Sphinx-Themes
+Flask
+Jinja2
+blinker
