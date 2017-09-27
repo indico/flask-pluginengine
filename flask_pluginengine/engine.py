@@ -63,23 +63,23 @@ class PluginEngine(object):
         for name in state.app.config['PLUGINENGINE_PLUGINS']:
             entry_points = list(iter_entry_points(app.config['PLUGINENGINE_NAMESPACE'], name))
             if not entry_points:
-                state.logger.error('Plugin {} does not exist'.format(name))
+                state.logger.error('Plugin %s does not exist', name)
                 state.failed.add(name)
                 continue
             elif len(entry_points) > 1:
-                state.logger.error('Plugin name {} is not unique (defined in {})'
-                                   .format(name, ', '.join(ep.module_name for ep in entry_points)))
+                state.logger.error('Plugin name %s is not unique (defined in %s)',
+                                   name, ', '.join(ep.module_name for ep in entry_points))
                 state.failed.add(name)
                 continue
             entry_point = entry_points[0]
             try:
                 plugin_class = entry_point.load()
             except ImportError:
-                state.logger.exception('Could not load plugin {}'.format(name))
+                state.logger.exception('Could not load plugin %s', name)
                 state.failed.add(name)
                 continue
             if not issubclass(plugin_class, self.plugin_class):
-                state.logger.error('Plugin {} does not inherit from {}'.format(name, self.plugin_class.__name__))
+                state.logger.error('Plugin %s does not inherit from %s', name, self.plugin_class.__name__)
                 state.failed.add(name)
                 continue
             plugin_class.package_name = entry_point.module_name.split('.')[0]
