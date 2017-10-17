@@ -46,6 +46,9 @@ class NonDescriptivePlugin(Plugin):
 
 
 class MockEntryPoint(EntryPoint):
+    def __init__(self, name, module_name):
+        super(MockEntryPoint, self).__init__(name, module_name, dist=Distribution(version='1.2.3'))
+
     def load(self):
         if self.name == 'importfail':
             raise ImportError()
@@ -96,11 +99,7 @@ def mock_entry_point(monkeypatch):
             'imposter': [MockEntryPoint('imposter', 'test.imposter')]
         }[name]
 
-    def _mock_distribution(name):
-        return Distribution(version='1.2.3')
-
     monkeypatch.setattr(engine_mod, 'iter_entry_points', _mock_entry_points)
-    monkeypatch.setattr(engine_mod, 'get_distribution', _mock_distribution)
 
 
 @pytest.fixture
