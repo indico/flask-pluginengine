@@ -72,7 +72,7 @@ def flask_app():
     return app
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def flask_app_ctx(flask_app):
     with flask_app.app_context():
         yield flask_app
