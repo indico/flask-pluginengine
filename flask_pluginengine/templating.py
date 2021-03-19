@@ -9,11 +9,10 @@ import os
 from flask import current_app
 from flask.templating import Environment
 from jinja2 import FileSystemLoader, PrefixLoader, TemplateNotFound, Template
-from jinja2.compiler import dict_item_iter, CodeGenerator
+from jinja2.compiler import CodeGenerator
 from jinja2.runtime import Macro, Context
 from jinja2.utils import internalcode
 
-from ._compat import iteritems
 from .util import (wrap_iterator_in_plugin_context, wrap_macro_in_plugin_context, get_state,
                    plugin_name_from_template_name)
 
@@ -86,7 +85,7 @@ class PluginContextTemplate(Template):
         # When creating a template module we need to wrap all macros in the plugin context
         # of the containing template in case they are called from another context
         module = super(PluginContextTemplate, self).make_module(vars, shared, locals)
-        for attr, macro in iteritems(module.__dict__):
+        for macro in module.__dict__.values():
             if not isinstance(macro, Macro):
                 continue
             wrap_macro_in_plugin_context(self.plugin, macro)
@@ -118,8 +117,8 @@ class PluginCodeGenerator(CodeGenerator):
         plugin_name = plugin_name_from_template_name(self.name)
         # Execute all blocks inside the plugin context
         self.writeline('from flask_pluginengine.util import wrap_iterator_in_plugin_context')
-        self.writeline('blocks = {name: wrap_iterator_in_plugin_context(%r, func) for name, func in blocks.%s()}' %
-                       (plugin_name, dict_item_iter))
+        self.writeline('blocks = {name: wrap_iterator_in_plugin_context(%r, func) for name, func in blocks.items()}' %
+                       (plugin_name))
 
     def visit_CallBlock(self, *args, **kwargs):
         sentinel = object()
