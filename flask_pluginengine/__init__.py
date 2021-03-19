@@ -4,8 +4,6 @@
 # Flask-PluginEngine is free software; you can redistribute it
 # and/or modify it under the terms of the Revised BSD License.
 
-from __future__ import unicode_literals
-
 from .engine import PluginEngine
 from .globals import current_plugin
 from .mixins import (PluginBlueprintSetupState, PluginBlueprintSetupStateMixin, PluginBlueprint, PluginBlueprintMixin,

@@ -26,7 +26,7 @@ class PrefixIgnoringFileSystemLoader(FileSystemLoader):
 
     def get_source(self, environment, template):
         name = template.split(':', 1)[1]
-        source, filename, uptodate = super(PrefixIgnoringFileSystemLoader, self).get_source(environment, name)
+        source, filename, uptodate = super().get_source(environment, name)
         return source, filename, uptodate
 
     def list_templates(self):  # pragma: no cover
@@ -37,7 +37,7 @@ class PluginPrefixLoader(PrefixLoader):
     """Prefix loader that uses plugin names to select the load path"""
 
     def __init__(self, app):
-        super(PluginPrefixLoader, self).__init__(None, ':')
+        super().__init__(None, ':')
         self.app = app
 
     def get_loader(self, template):
@@ -62,7 +62,7 @@ class PluginPrefixLoader(PrefixLoader):
         plugin = get_state(current_app).plugin_engine.get_plugin(plugin_name)
         if plugin is None:  # pragma: no cover
             # that should never happen
-            raise RuntimeError('Plugin template {} has no plugin'.format(name))
+            raise RuntimeError(f'Plugin template {name} has no plugin')
         # Keep a reference to the plugin so we don't have to get it from the name later
         tpl.plugin = plugin
         return tpl
@@ -84,7 +84,7 @@ class PluginContextTemplate(Template):
     def make_module(self, vars=None, shared=False, locals=None):
         # When creating a template module we need to wrap all macros in the plugin context
         # of the containing template in case they are called from another context
-        module = super(PluginContextTemplate, self).make_module(vars, shared, locals)
+        module = super().make_module(vars, shared, locals)
         for macro in module.__dict__.values():
             if not isinstance(macro, Macro):
                 continue
@@ -104,39 +104,40 @@ class PluginJinjaContext(Context):
             if caller._plugin_name:
                 plugin = get_state(current_app).plugin_engine.get_plugin(caller._plugin_name)
             wrap_macro_in_plugin_context(plugin, caller)
-        return super(PluginJinjaContext, __self).call(__obj, *args, **kwargs)
+        return super().call(__obj, *args, **kwargs)
 
 
 class PluginCodeGenerator(CodeGenerator):
     def __init__(self, *args, **kwargs):
-        super(PluginCodeGenerator, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.inside_call_blocks = []
 
     def visit_Template(self, node, frame=None):
-        super(PluginCodeGenerator, self).visit_Template(node, frame)
+        super().visit_Template(node, frame)
         plugin_name = plugin_name_from_template_name(self.name)
         # Execute all blocks inside the plugin context
         self.writeline('from flask_pluginengine.util import wrap_iterator_in_plugin_context')
-        self.writeline('blocks = {name: wrap_iterator_in_plugin_context(%r, func) for name, func in blocks.items()}' %
-                       (plugin_name))
+        self.writeline(
+            'blocks = {name: wrap_iterator_in_plugin_context(%r, func) for name, func in blocks.items()}' % plugin_name
+        )
 
     def visit_CallBlock(self, *args, **kwargs):
         sentinel = object()
         self.inside_call_blocks.append(sentinel)
         # ths parent's function ends up calling `macro_def` to create the macro function
-        super(PluginCodeGenerator, self).visit_CallBlock(*args, **kwargs)
+        super().visit_CallBlock(*args, **kwargs)
         assert self.inside_call_blocks.pop() is sentinel
 
     def macro_def(self, *args, **kwargs):
-        super(PluginCodeGenerator, self).macro_def(*args, **kwargs)
+        super().macro_def(*args, **kwargs)
         if self.inside_call_blocks:
             # we don't have access to the actual Template object here, but we do have
             # access to its name which gives us the plugin name.
             plugin_name = plugin_name_from_template_name(self.name)
-            self.writeline('caller._plugin_name = {!r}'.format(plugin_name))
+            self.writeline(f'caller._plugin_name = {plugin_name!r}')
 
 
-class PluginEnvironmentMixin(object):
+class PluginEnvironmentMixin:
     code_generator_class = PluginCodeGenerator
     context_class = PluginJinjaContext
     template_class = PluginContextTemplate

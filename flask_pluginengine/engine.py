@@ -4,8 +4,6 @@
 # Flask-PluginEngine is free software; you can redistribute it
 # and/or modify it under the terms of the Revised BSD License.
 
-from __future__ import unicode_literals
-
 from pkg_resources import iter_entry_points
 
 from flask import current_app
@@ -17,7 +15,7 @@ from .signals import plugins_loaded
 from .util import get_state, resolve_dependencies
 
 
-class PluginEngine(object):
+class PluginEngine:
     plugin_class = Plugin
 
     def __init__(self, app=None, **kwargs):
@@ -41,7 +39,7 @@ class PluginEngine(object):
         """
         state = get_state(app)
         if state.plugins_loaded:
-            raise RuntimeError('Plugins already loaded for {}'.format(state.app))
+            raise RuntimeError(f'Plugins already loaded for {state.app}')
         state.plugins_loaded = True
         plugins = self._import_plugins(state.app)
         if state.failed and not skip_failed:
@@ -130,7 +128,7 @@ class PluginEngine(object):
         return '<PluginEngine()>'
 
 
-class _PluginEngineState(object):
+class _PluginEngineState:
     def __init__(self, plugin_engine, app, logger):
         self.plugin_engine = plugin_engine
         self.app = app
@@ -140,4 +138,4 @@ class _PluginEngineState(object):
         self.plugins_loaded = False
 
     def __repr__(self):
-        return '<_PluginEngineState({}, {}, {})>'.format(self.plugin_engine, self.app, self.plugins)
+        return f'<_PluginEngineState({self.plugin_engine}, {self.app}, {self.plugins})>'

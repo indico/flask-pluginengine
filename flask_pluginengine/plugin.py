@@ -4,8 +4,6 @@
 # Flask-PluginEngine is free software; you can redistribute it
 # and/or modify it under the terms of the Revised BSD License.
 
-from __future__ import unicode_literals
-
 from contextlib import contextmanager
 
 from flask import render_template, url_for, current_app
@@ -67,22 +65,22 @@ def render_plugin_template(template_name_or_list, **context):
     if not isinstance(template_name_or_list, str):
         if not current_plugin and not all(':' in tpl for tpl in template_name_or_list):
             raise RuntimeError('render_plugin_template outside plugin context')
-        template_name_or_list = ['{}:{}'.format(current_plugin.name, tpl) if ':' not in tpl else tpl
+        template_name_or_list = [f'{current_plugin.name}:{tpl}' if ':' not in tpl else tpl
                                  for tpl in template_name_or_list]
     elif ':' not in template_name_or_list:
         if not current_plugin:
             raise RuntimeError('render_plugin_template outside plugin context')
-        template_name_or_list = '{}:{}'.format(current_plugin.name, template_name_or_list)
+        template_name_or_list = f'{current_plugin.name}:{template_name_or_list}'
     return render_template(template_name_or_list, **context)
 
 
 def url_for_plugin(endpoint, **values):
     """Like url_for but prepending plugin_ to endpoint."""
-    endpoint = 'plugin_{}'.format(endpoint)
+    endpoint = f'plugin_{endpoint}'
     return url_for(endpoint, **values)
 
 
-class Plugin(object):
+class Plugin:
     package_name = None  # set to the containing package when the plugin is loaded
     package_version = None  # set to the version of the containing package when the plugin is loaded
     version = None  # set to the package_version if it's None when the plugin is loaded

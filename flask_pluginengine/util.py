@@ -4,8 +4,6 @@
 # Flask-PluginEngine is free software; you can redistribute it
 # and/or modify it under the terms of the Revised BSD License.
 
-from __future__ import unicode_literals
-
 import sys
 from contextlib import contextmanager
 from functools import wraps
@@ -71,7 +69,7 @@ def plugin_context(plugin):
             yield
 
 
-class equality_preserving_decorator(object):
+class equality_preserving_decorator:
     """Decorator which is considered equal with the original function"""
     def __init__(self, orig_func):
         self.orig_func = orig_func
@@ -99,7 +97,7 @@ class equality_preserving_decorator(object):
         return hash(self.orig_func)
 
     def __repr__(self):
-        return '<decorated {!r}>'.format(self.orig_func)
+        return f'<decorated {self.orig_func!r}>'
 
 
 def plugin_name_from_template_name(name):
@@ -130,8 +128,7 @@ def wrap_iterator_in_plugin_context(plugin, gen_or_func):
             # not actually keeping the context around.
             yield None
 
-            for item in gen:
-                yield item
+            yield from gen
 
     # The trick is to start the generator.  Then the code execution runs until
     # the first dummy None is yielded at which point the context was already
