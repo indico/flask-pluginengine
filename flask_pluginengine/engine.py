@@ -6,6 +6,7 @@
 
 from pkg_resources import iter_entry_points
 
+import traceback
 from flask import current_app
 from flask.helpers import get_root_path
 from werkzeug.datastructures import ImmutableDict
@@ -73,7 +74,8 @@ class PluginEngine:
             try:
                 plugin_class = entry_point.load()
             except ImportError:
-                state.logger.exception('Could not load plugin %s', name)
+                traceback.print_exc()
+                state.logger.exception('Could not load plugin %s due to import error', name)
                 state.failed.add(name)
                 continue
             if not issubclass(plugin_class, self.plugin_class):
