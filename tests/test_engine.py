@@ -123,6 +123,23 @@ def loaded_engine(mock_entry_points, monkeypatch, flask_app, engine):
     return engine
 
 
+def test_real_plugin():
+    app = PluginFlask(__name__)
+    app.config['TESTING'] = True
+    app.config['PLUGINENGINE_NAMESPACE'] = 'flask_multipass.test.plugins'
+    app.config['PLUGINENGINE_PLUGINS'] = ['foobar']
+    engine = PluginEngine(app)
+    assert engine.load_plugins(app)
+    with app.app_context():
+        assert len(engine.get_failed_plugins()) == 0
+        assert list(engine.get_active_plugins()) == ['foobar']
+        plugin = engine.get_active_plugins()['foobar']
+        assert plugin.title == 'Foobar plugin'
+        assert plugin.description == 'This plugin foobars your foo with your bars.\nAnd doing so is amazing!'
+        assert plugin.version == '69.42'
+        assert plugin.package_version == '69.13.37'
+
+
 def test_fail_pluginengine_namespace(flask_app):
     """
     Fail if PLUGINENGINE_NAMESPACE is not defined
