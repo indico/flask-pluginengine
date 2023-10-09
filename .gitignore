@@ -12,3 +12,4 @@ htmlcov/
 .cache/
 dist/
 build/
+docs/_build

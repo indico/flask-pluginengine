@@ -32,6 +32,15 @@ Informations on a specific functions, classes or methods.
 
    api
 
+Changelog
+---------
+List of released versions of Flask-PluginEngine can be found here.
+
+.. toctree::
+   :maxdepth: 2
+
+   changelog
+
 Indices and tables
 ------------------
 * :ref:`genindex`
