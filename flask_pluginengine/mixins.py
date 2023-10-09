@@ -6,7 +6,7 @@
 
 from flask import Blueprint, Flask
 from flask.blueprints import BlueprintSetupState
-from flask.helpers import locked_cached_property
+from werkzeug.utils import cached_property
 from jinja2 import ChoiceLoader
 
 from .globals import current_plugin
@@ -36,7 +36,7 @@ class PluginBlueprintMixin:
     def make_setup_state(self, app, options, first_registration=False):
         return PluginBlueprintSetupState(self, app, options, first_registration)
 
-    @locked_cached_property
+    @cached_property
     def jinja_loader(self):
         return None
 
