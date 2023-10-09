@@ -9,23 +9,23 @@ on:
 jobs:
   tests:
     name: ${{ matrix.name }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {name: Style, python: '3.10', tox: style}
+          - {name: Style, python: '3.12', tox: style}
+          - {name: '3.12', python: '3.12', tox: py312}
+          - {name: '3.11', python: '3.11', tox: py311}
           - {name: '3.10', python: '3.10', tox: py310}
           - {name: '3.9', python: '3.9', tox: py39}
           - {name: '3.8', python: '3.8', tox: py38}
-          - {name: '3.7', python: '3.7', tox: py37}
-          - {name: '3.6', python: '3.6', tox: py36}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
 
@@ -35,16 +35,8 @@ jobs:
           pip install -U setuptools
           python -m pip install -U pip
 
-      - name: Get pip cache dir
-        id: pip-cache
-        run: echo "::set-output name=dir::$(pip cache dir)"
+      - name: Install tox
+        run: pip install tox
 
-      - name: Cache pip
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.pip-cache.outputs.dir }}
-          key: pip|${{ runner.os }}|${{ matrix.python }}|${{ hashFiles('setup.*') }}
-
-      - run: pip install tox
-
-      - run: tox -e ${{ matrix.tox }}
+      - name: Run tests
+        run: tox -e ${{ matrix.tox }}
