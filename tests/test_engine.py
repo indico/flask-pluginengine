@@ -6,9 +6,10 @@
 
 import os
 import re
-from pkg_resources import EntryPoint, Distribution
+from dataclasses import dataclass
 
 import pytest
+from importlib_metadata import EntryPoint
 from jinja2 import TemplateNotFound
 from flask import render_template, Flask
 
@@ -46,10 +47,7 @@ class NonDescriptivePlugin(Plugin):
 
 
 class MockEntryPoint(EntryPoint):
-    def __init__(self, name, module_name):
-        super(MockEntryPoint, self).__init__(name, module_name, dist=Distribution(version='1.2.3'))
-
-    def load(self):
+    def load(self, *args, **kwargs):
         if self.name == 'importfail':
             raise ImportError()
         elif self.name == 'imposter':
@@ -60,6 +58,15 @@ class MockEntryPoint(EntryPoint):
             return NonDescriptivePlugin
         else:
             return EspressoModule
+
+
+@dataclass
+class MockDistribution:
+    version: str
+
+
+def mock_entry_point(name, value):
+    return MockEntryPoint(name, value, 'dummy.group')._for(MockDistribution('1.2.3'))
 
 
 @pytest.fixture
@@ -85,25 +92,28 @@ def engine(flask_app):
 
 
 @pytest.fixture
-def mock_entry_point(monkeypatch):
+def mock_entry_points(monkeypatch):
     from flask_pluginengine import engine as engine_mod
 
-    def _mock_entry_points(_, name):
-        return {
-            'espresso': [MockEntryPoint('espresso', 'test.plugin')],
-            'otherversion': [MockEntryPoint('otherversion', 'test.plugin')],
-            'nondescriptive': [MockEntryPoint('nondescriptive', 'test.plugin')],
-            'someotherstuff': [],
-            'doubletrouble': [MockEntryPoint('double', 'double'), MockEntryPoint('double', 'double')],
-            'importfail': [MockEntryPoint('importfail', 'test.importfail')],
-            'imposter': [MockEntryPoint('imposter', 'test.imposter')]
-        }[name]
+    MOCK_EPS = {
+        'test': [
+            mock_entry_point('espresso', 'test.plugin'),
+            mock_entry_point('otherversion', 'test.plugin'),
+            mock_entry_point('nondescriptive', 'test.plugin'),
+            mock_entry_point('double', 'double'), mock_entry_point('double', 'double'),
+            mock_entry_point('importfail', 'test.importfail'),
+            mock_entry_point('imposter', 'test.imposter')
+        ]
+    }
 
-    monkeypatch.setattr(engine_mod, 'iter_entry_points', _mock_entry_points)
+    def _mock_entry_points(*, group, name):
+        return [ep for ep in MOCK_EPS[group] if ep.name == name]
+
+    monkeypatch.setattr(engine_mod, 'importlib_entry_points', _mock_entry_points)
 
 
 @pytest.fixture
-def loaded_engine(mock_entry_point, monkeypatch, flask_app, engine):
+def loaded_engine(mock_entry_points, monkeypatch, flask_app, engine):
     engine.load_plugins(flask_app)
 
     def init_loader(self, *args, **kwargs):
@@ -123,7 +133,8 @@ def test_fail_pluginengine_namespace(flask_app):
     assert 'PLUGINENGINE_NAMESPACE' in str(exc_info.value)
 
 
-def test_load(mock_entry_point, flask_app, engine):
+@pytest.mark.usefixtures('mock_entry_points')
+def test_load(flask_app, engine):
     """
     We can load a plugin
     """
@@ -150,7 +161,8 @@ def test_load(mock_entry_point, flask_app, engine):
         assert plugin.package_version == '1.2.3'
 
 
-def test_no_description(mock_entry_point, flask_app, engine):
+@pytest.mark.usefixtures('mock_entry_points')
+def test_no_description(flask_app, engine):
     flask_app.config['PLUGINENGINE_PLUGINS'] = ['nondescriptive']
     engine.load_plugins(flask_app)
     with flask_app.app_context():
@@ -159,7 +171,8 @@ def test_no_description(mock_entry_point, flask_app, engine):
         assert plugin.description == 'no description available'
 
 
-def test_custom_version(mock_entry_point, flask_app, engine):
+@pytest.mark.usefixtures('mock_entry_points')
+def test_custom_version(flask_app, engine):
     flask_app.config['PLUGINENGINE_PLUGINS'] = ['otherversion']
     engine.load_plugins(flask_app)
     with flask_app.app_context():
@@ -168,7 +181,8 @@ def test_custom_version(mock_entry_point, flask_app, engine):
         assert plugin.version == '2.0'
 
 
-def test_fail_non_existing(mock_entry_point, flask_app, engine):
+@pytest.mark.usefixtures('mock_entry_points')
+def test_fail_non_existing(flask_app, engine):
     """
     Fail if a plugin that is specified in the config does not exist
     """
@@ -182,7 +196,8 @@ def test_fail_non_existing(mock_entry_point, flask_app, engine):
         assert len(engine.get_active_plugins()) == 0
 
 
-def test_fail_noskip(mock_entry_point, flask_app, engine):
+@pytest.mark.usefixtures('mock_entry_points')
+def test_fail_noskip(flask_app, engine):
     """
     Fail immediately if no_skip=False
     """
@@ -192,7 +207,8 @@ def test_fail_noskip(mock_entry_point, flask_app, engine):
     assert engine.load_plugins(flask_app, skip_failed=False) is False
 
 
-def test_fail_double(mock_entry_point, flask_app, engine):
+@pytest.mark.usefixtures('mock_entry_points')
+def test_fail_double(flask_app, engine):
     """
     Fail if the same plugin corresponds to two extension points
     """
@@ -206,7 +222,8 @@ def test_fail_double(mock_entry_point, flask_app, engine):
         assert len(engine.get_active_plugins()) == 0
 
 
-def test_fail_import_error(mock_entry_point, flask_app, engine):
+@pytest.mark.usefixtures('mock_entry_points')
+def test_fail_import_error(flask_app, engine):
     """
     Fail if impossible to import Plugin
     """
@@ -220,7 +237,8 @@ def test_fail_import_error(mock_entry_point, flask_app, engine):
         assert len(engine.get_active_plugins()) == 0
 
 
-def test_fail_not_subclass(mock_entry_point, flask_app, engine):
+@pytest.mark.usefixtures('mock_entry_points')
+def test_fail_not_subclass(flask_app, engine):
     """
     Fail if the plugin is not a subclass of `Plugin`
     """
@@ -234,7 +252,8 @@ def test_fail_not_subclass(mock_entry_point, flask_app, engine):
         assert len(engine.get_active_plugins()) == 0
 
 
-def test_instance_not_loaded(mock_entry_point, flask_app, engine):
+@pytest.mark.usefixtures('mock_entry_points')
+def test_instance_not_loaded(flask_app, engine):
     """
     Fail when trying to get the instance for a plugin that's not loaded
     """
@@ -249,7 +268,8 @@ def test_instance_not_loaded(mock_entry_point, flask_app, engine):
             EspressoModule.instance
 
 
-def test_instance(flask_app_ctx, loaded_engine):
+@pytest.mark.usefixtures('flask_app_ctx')
+def test_instance(loaded_engine):
     """
     Check if Plugin.instance points to the correct instance
     """

@@ -4,10 +4,9 @@
 # Flask-PluginEngine is free software; you can redistribute it
 # and/or modify it under the terms of the Revised BSD License.
 
-from pkg_resources import iter_entry_points
-
 from flask import current_app
 from flask.helpers import get_root_path
+from importlib_metadata import entry_points as importlib_entry_points
 from werkzeug.datastructures import ImmutableDict
 
 from .plugin import Plugin
@@ -59,17 +58,17 @@ class PluginEngine:
         state = get_state(app)
         plugins = {}
         for name in state.app.config['PLUGINENGINE_PLUGINS']:
-            entry_points = list(iter_entry_points(app.config['PLUGINENGINE_NAMESPACE'], name))
+            entry_points = importlib_entry_points(group=app.config['PLUGINENGINE_NAMESPACE'], name=name)
             if not entry_points:
                 state.logger.error('Plugin %s does not exist', name)
                 state.failed.add(name)
                 continue
             elif len(entry_points) > 1:
-                state.logger.error('Plugin name %s is not unique (defined in %s)',
-                                   name, ', '.join(ep.module_name for ep in entry_points))
+                defs = ', '.join(ep.module for ep in entry_points)
+                state.logger.error('Plugin name %s is not unique (defined in %s)', name, defs)
                 state.failed.add(name)
                 continue
-            entry_point = entry_points[0]
+            entry_point = list(entry_points)[0]
             try:
                 plugin_class = entry_point.load()
             except ImportError:
@@ -80,12 +79,12 @@ class PluginEngine:
                 state.logger.error('Plugin %s does not inherit from %s', name, self.plugin_class.__name__)
                 state.failed.add(name)
                 continue
-            plugin_class.package_name = entry_point.module_name.split('.')[0]
+            plugin_class.package_name = entry_point.module.split('.')[0]
             plugin_class.package_version = entry_point.dist.version
             if plugin_class.version is None:
                 plugin_class.version = plugin_class.package_version
             plugin_class.name = name
-            plugin_class.root_path = get_root_path(entry_point.module_name)
+            plugin_class.root_path = get_root_path(entry_point.module)
             plugins[name] = plugin_class
         return plugins
 
