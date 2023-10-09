@@ -6,6 +6,7 @@
 
 from blinker import Namespace
 
+
 _signals = Namespace()
 plugins_loaded = _signals.signal('plugins-loaded', """
 Called after :meth:`~PluginEngine.load_plugins` has loaded the

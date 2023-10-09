@@ -6,11 +6,11 @@
 
 from flask import Blueprint, Flask
 from flask.blueprints import BlueprintSetupState
-from werkzeug.utils import cached_property
 from jinja2 import ChoiceLoader
+from werkzeug.utils import cached_property
 
 from .globals import current_plugin
-from .templating import PluginPrefixLoader, PluginEnvironment
+from .templating import PluginEnvironment, PluginPrefixLoader
 from .util import wrap_in_plugin_context
 
 

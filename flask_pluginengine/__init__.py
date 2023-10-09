@@ -6,12 +6,13 @@
 
 from .engine import PluginEngine
 from .globals import current_plugin
-from .mixins import (PluginBlueprintSetupState, PluginBlueprintSetupStateMixin, PluginBlueprint, PluginBlueprintMixin,
+from .mixins import (PluginBlueprint, PluginBlueprintMixin, PluginBlueprintSetupState, PluginBlueprintSetupStateMixin,
                      PluginFlask, PluginFlaskMixin)
-from .plugin import Plugin, uses, depends, render_plugin_template, url_for_plugin
+from .plugin import Plugin, depends, render_plugin_template, url_for_plugin, uses
 from .signals import plugins_loaded
 from .templating import PluginPrefixLoader
-from .util import with_plugin_context, wrap_in_plugin_context, trim_docstring, plugin_context
+from .util import plugin_context, trim_docstring, with_plugin_context, wrap_in_plugin_context
+
 
 __version__ = '0.4.1'
 __all__ = ('PluginEngine', 'current_plugin', 'PluginBlueprintSetupState', 'PluginBlueprintSetupStateMixin',

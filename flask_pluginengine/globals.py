@@ -4,7 +4,8 @@
 # Flask-PluginEngine is free software; you can redistribute it
 # and/or modify it under the terms of the Revised BSD License.
 
-from werkzeug.local import LocalStack, LocalProxy
+from werkzeug.local import LocalProxy, LocalStack
+
 
 _plugin_ctx_stack = LocalStack()
 

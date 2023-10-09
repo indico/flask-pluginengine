@@ -8,13 +8,13 @@ import os
 
 from flask import current_app
 from flask.templating import Environment
-from jinja2 import FileSystemLoader, PrefixLoader, TemplateNotFound, Template
+from jinja2 import FileSystemLoader, PrefixLoader, Template, TemplateNotFound
 from jinja2.compiler import CodeGenerator
-from jinja2.runtime import Macro, Context
+from jinja2.runtime import Context, Macro
 from jinja2.utils import internalcode
 
-from .util import (wrap_iterator_in_plugin_context, wrap_macro_in_plugin_context, get_state,
-                   plugin_name_from_template_name)
+from .util import (get_state, plugin_name_from_template_name, wrap_iterator_in_plugin_context,
+                   wrap_macro_in_plugin_context)
 
 
 class PrefixIgnoringFileSystemLoader(FileSystemLoader):

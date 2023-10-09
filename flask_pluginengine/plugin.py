@@ -6,10 +6,10 @@
 
 from contextlib import contextmanager
 
-from flask import render_template, url_for, current_app
+from flask import current_app, render_template, url_for
 
 from .globals import _plugin_ctx_stack, current_plugin
-from .util import wrap_in_plugin_context, trim_docstring, classproperty, get_state
+from .util import classproperty, get_state, trim_docstring, wrap_in_plugin_context
 
 
 def depends(*plugins):
