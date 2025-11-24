@@ -23,7 +23,7 @@ jobs:
           - {name: '3.8', python: '3.8', tox: py38}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
